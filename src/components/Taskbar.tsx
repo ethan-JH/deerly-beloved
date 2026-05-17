@@ -14,9 +14,9 @@ interface TaskbarProps {
   onToggle: (id: string) => void
 }
 
-// Bevel shadows use palette colours: cream highlight (#F5EBD0), forest-green shadow (#213D21)
-const RAISED   = 'inset -2px -2px 0 rgba(33,61,33,0.45), inset 2px 2px 0 rgb(245,235,208)'
-const PRESSED  = 'inset 2px 2px 0 rgba(33,61,33,0.45), inset -2px -2px 0 rgb(245,235,208)'
+// Bevel shadows use palette colours: golden highlight (#FAF4C6), Win95-blue shadow (#1760B0)
+const RAISED   = 'inset -2px -2px 0 rgba(23,96,176,0.45), inset 2px 2px 0 rgb(250,244,198)'
+const PRESSED  = 'inset 2px 2px 0 rgba(23,96,176,0.45), inset -2px -2px 0 rgb(250,244,198)'
 
 const ARROW_BTN = {
   background: 'var(--color-surface)',
@@ -36,7 +36,7 @@ export function Taskbar({ items, onToggle }: TaskbarProps) {
       {/* ◀ — mobile only */}
       <button
         onClick={() => scroll(-1)}
-        className="md:hidden shrink-0 w-8 h-full flex items-center justify-center cursor-pointer select-none font-[family-name:var(--font-vt323)] text-[var(--color-primary)]"
+        className="md:hidden shrink-0 w-8 h-full flex items-center justify-center cursor-pointer select-none font-[family-name:var(--font-vt323)] text-[var(--color-text)]"
         style={ARROW_BTN}
         aria-label="Scroll taskbar left"
       >
@@ -59,18 +59,22 @@ export function Taskbar({ items, onToggle }: TaskbarProps) {
               onClick={() => onToggle(item.id)}
               className="flex flex-col items-center justify-center gap-1 px-3 py-1 min-w-[72px] h-full cursor-pointer select-none shrink-0 snap-start snap-always"
               style={{
-                background: item.isOpen ? 'rgba(33,61,33,0.08)' : 'var(--color-surface)',
+                background: item.isOpen ? 'rgba(23,96,176,0.08)' : 'var(--color-surface)',
                 boxShadow: item.isOpen ? PRESSED : RAISED,
               }}
             >
-              <span className={`text-2xl leading-none ${item.isOpen ? 'translate-x-px translate-y-px' : ''}`}>
-                {item.icon}
-              </span>
+              <img
+                src={item.icon}
+                alt={item.label}
+                width={32}
+                height={32}
+                className={`object-contain ${item.isOpen ? 'translate-x-px translate-y-px' : ''}`}
+              />
               <span
                 className={`font-[family-name:var(--font-vt323)] text-xs tracking-widest leading-none ${
                   item.isOpen
                     ? 'translate-x-px translate-y-px text-[var(--color-accent)]'
-                    : 'text-[var(--color-primary)]'
+                    : 'text-[var(--color-text)]'
                 }`}
               >
                 {item.label}
@@ -83,7 +87,7 @@ export function Taskbar({ items, onToggle }: TaskbarProps) {
       {/* ▶ — mobile only */}
       <button
         onClick={() => scroll(1)}
-        className="md:hidden shrink-0 w-8 h-full flex items-center justify-center cursor-pointer select-none font-[family-name:var(--font-vt323)] text-[var(--color-primary)]"
+        className="md:hidden shrink-0 w-8 h-full flex items-center justify-center cursor-pointer select-none font-[family-name:var(--font-vt323)] text-[var(--color-text)]"
         style={ARROW_BTN}
         aria-label="Scroll taskbar right"
       >

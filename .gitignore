@@ -40,6 +40,10 @@ yarn-error.log*
 .claude/
 tasks/
 
+# Supabase local dev state (Docker volumes, not needed in repo)
+supabase/.branches
+supabase/.temp
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

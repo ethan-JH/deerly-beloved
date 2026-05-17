@@ -14,53 +14,143 @@ interface WinState {
   spawnPosition: { x: number; y: number }
 }
 
+interface GuestData {
+  id: string
+  first_name: string
+  last_name: string
+  has_deer_park_room: boolean
+  friday_invited: boolean
+  plus_one_allowed: boolean
+  rsvp_submitted_at: string | null
+  attending_saturday: boolean | null
+  attending_friday: boolean | null
+}
+
 const FALLBACK_POSITIONS: Record<string, { x: number; y: number }> = {
-  home:     { x: 200, y: 80  },
-  rsvp:     { x: 240, y: 110 },
-  schedule: { x: 160, y: 130 },
-  travel:   { x: 220, y: 100 },
-  registry: { x: 180, y: 120 },
-  faq:      { x: 260, y: 90  },
+  home:      { x: 200, y: 80  },
+  rsvp:      { x: 240, y: 110 },
+  stay:      { x: 160, y: 130 },
+  itinerary: { x: 220, y: 100 },
+  travel:    { x: 180, y: 120 },
+  faq:       { x: 260, y: 90  },
 }
 
 const STAGGER: Record<string, { x: number; y: number }> = {
-  home:     { x: 0,   y: 0  },
-  rsvp:     { x: 40,  y: 30 },
-  schedule: { x: -40, y: 50 },
-  travel:   { x: 20,  y: 20 },
-  registry: { x: -20, y: 40 },
-  faq:      { x: 60,  y: 10 },
+  home:      { x: 0,   y: 0  },
+  rsvp:      { x: 40,  y: 30 },
+  stay:      { x: -40, y: 50 },
+  itinerary: { x: 20,  y: 20 },
+  travel:    { x: -20, y: 40 },
+  faq:       { x: 60,  y: 10 },
+}
+
+// Mobile: offsets from x=40 (centre of 80px total margin); y is absolute from top
+const MOBILE_STAGGER: Record<string, { x: number; y: number }> = {
+  home:      { x:   0, y: 50 },
+  rsvp:      { x:  15, y: 75 },
+  stay:      { x: -15, y: 95 },
+  itinerary: { x:  18, y: 65 },
+  travel:    { x: -18, y: 85 },
+  faq:       { x:  10, y: 70 },
 }
 
 const WINDOWS_CONFIG = [
-  { id: 'home',     label: 'HOME',     icon: '🏠', title: 'BECHAN & ETHAN' },
-  { id: 'rsvp',     label: 'RSVP',     icon: '💌', title: 'RSVP'           },
-  { id: 'schedule', label: 'SCHEDULE', icon: '📋', title: 'SCHEDULE'        },
-  { id: 'travel',   label: 'TRAVEL',   icon: '✈️', title: 'TRAVEL'          },
-  { id: 'registry', label: 'REGISTRY', icon: '🎁', title: 'REGISTRY'        },
-  { id: 'faq',      label: 'FAQ',      icon: '❓', title: 'FAQ'             },
+  { id: 'home',      label: 'HOME',      icon: '/icons/home.png',      title: 'BECHAN & ETHAN' },
+  { id: 'rsvp',      label: 'RSVP',      icon: '/icons/rsvp.png',      title: 'RSVP'           },
+  { id: 'stay',      label: 'STAY',      icon: '/icons/stay.png',      title: 'STAY'            },
+  { id: 'itinerary', label: 'ITINERARY', icon: '/icons/itinerary.png', title: 'ITINERARY'       },
+  { id: 'travel',    label: 'TRAVEL',    icon: '/icons/travel.png',    title: 'TRAVEL'          },
+  { id: 'faq',       label: 'FAQ',       icon: '/icons/faq.png',       title: 'FAQ'             },
 ]
 
 function getWidth(id: string): number {
   return id === 'home' ? 560 : 480
 }
 
-function TopBar({ clock }: { clock: string | null }) {
+// Fixed positions/delays avoid SSR hydration mismatch from Math.random()
+const CONFETTI_PIECES = [
+  { left: '5%',  delay: '-0.2s', color: '#E07B5A', size: 8  },
+  { left: '15%', delay: '-0.9s', color: '#1760B0', size: 6  },
+  { left: '25%', delay: '-0.4s', color: '#FFF5EE', size: 10 },
+  { left: '35%', delay: '-1.1s', color: '#E07B5A', size: 7  },
+  { left: '45%', delay: '-0.7s', color: '#1760B0', size: 9  },
+  { left: '55%', delay: '-1.3s', color: '#E07B5A', size: 6  },
+  { left: '65%', delay: '-0.5s', color: '#FFF5EE', size: 8  },
+  { left: '75%', delay: '-1.0s', color: '#1760B0', size: 7  },
+  { left: '85%', delay: '-0.3s', color: '#E07B5A', size: 9  },
+  { left: '92%', delay: '-1.2s', color: '#1760B0', size: 6  },
+  { left: '10%', delay: '-0.8s', color: '#E07B5A', size: 7  },
+  { left: '30%', delay: '-1.5s', color: '#1760B0', size: 8  },
+  { left: '50%', delay: '-0.6s', color: '#FFF5EE', size: 6  },
+  { left: '70%', delay: '-1.4s', color: '#E07B5A', size: 9  },
+  { left: '90%', delay: '-0.1s', color: '#1760B0', size: 7  },
+  { left: '20%', delay: '-1.6s', color: '#E07B5A', size: 8  },
+]
+
+const CHROME_BTN = {
+  background: 'var(--color-chrome)',
+  boxShadow: '2px 2px 0 rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.15)',
+} as const
+
+function TopBar({ clock, guest }: { clock: string | null; guest: GuestData | null }) {
   return (
-    <div className="fixed top-0 left-0 right-0 h-7 z-[9999] border-b-2 border-[var(--color-primary)] bg-[var(--color-bg)] flex items-center justify-between px-4">
-      <span className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-primary)] tracking-widest leading-none">
-        BECHAN &amp; ETHAN
-      </span>
-      {clock && (
-        <span className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-primary)] tracking-widest leading-none">
-          {clock}
+    <>
+      <div
+        className="fixed top-3 left-3 z-[9999] flex items-center px-3 py-1 rounded-lg"
+        style={CHROME_BTN}
+      >
+        <span className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-text)] tracking-widest leading-none">
+          {guest ? `WELCOME, ${guest.first_name.toUpperCase()}` : 'BECHAN & ETHAN'}
         </span>
+      </div>
+      {clock && (
+        <div
+          className="fixed top-3 right-3 z-[9999] flex items-center px-3 py-1 rounded-lg"
+          style={CHROME_BTN}
+        >
+          <span className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-text)] tracking-widest leading-none">
+            {clock}
+          </span>
+        </div>
       )}
+    </>
+  )
+}
+
+function RoomPrizeContent({ firstName }: { firstName: string }) {
+  return (
+    <div className="relative overflow-hidden p-8 text-center" style={{ minHeight: 260 }}>
+      {CONFETTI_PIECES.map((c, i) => (
+        <div
+          key={i}
+          className="confetti-piece"
+          style={{
+            left: c.left,
+            width: c.size,
+            height: c.size,
+            backgroundColor: c.color,
+            animationDelay: c.delay,
+          }}
+        />
+      ))}
+      <div className="relative z-10 flex flex-col items-center gap-4 pt-4">
+        <span className="text-5xl">🎊</span>
+        <h2 className="font-[family-name:var(--font-vt323)] text-3xl tracking-widest text-[var(--color-primary)]">
+          YOU&apos;RE ON THE LIST, {firstName.toUpperCase()}!
+        </h2>
+        <div className="w-8 h-0.5 bg-[var(--color-accent)]" />
+        <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-text)] leading-relaxed max-w-xs">
+          A room at Deer Park Country House has been reserved for the night of Saturday 12th June — yours to book if you&apos;d like to stay on site.
+        </p>
+        <p className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[var(--color-muted)]">
+          Find booking details in the STAY window.
+        </p>
+      </div>
     </div>
   )
 }
 
-function WindowContent({ id, onOpenWindow }: { id: string; onOpenWindow: (id: string) => void }) {
+function WindowContent({ id, guest, onOpenWindow }: { id: string; guest: GuestData | null; onOpenWindow: (id: string) => void }) {
   switch (id) {
     case 'home':
       return (
@@ -89,28 +179,42 @@ function WindowContent({ id, onOpenWindow }: { id: string; onOpenWindow: (id: st
       return (
         <div className="p-8">
           <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">RSVP</h2>
-          <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-muted)]">RSVP form coming soon.</p>
+          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)]">
+            {guest ? `Let us know if you can make it, ${guest.first_name}.` : 'RSVP form coming soon.'}
+          </p>
         </div>
       )
-    case 'schedule':
+    case 'stay':
+      return guest?.has_deer_park_room ? (
+        <div className="p-8">
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Your Stay</h2>
+          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] mb-4 leading-relaxed">
+            A room at Deer Park Country House has been reserved for the night of Saturday 12th June 2027 — yours to book if you&apos;d like to stay on site.
+          </p>
+          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] leading-relaxed">
+            Booking details coming soon.
+          </p>
+        </div>
+      ) : (
+        <div className="p-8">
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Places to Stay</h2>
+          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)]">
+            Accommodation suggestions coming soon.
+          </p>
+        </div>
+      )
+    case 'itinerary':
       return (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Schedule</h2>
-          <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-muted)]">Day-of schedule coming soon.</p>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">The Weekend</h2>
+          <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-muted)]">Weekend itinerary coming soon.</p>
         </div>
       )
     case 'travel':
       return (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Travel</h2>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Getting There</h2>
           <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-muted)]">Travel information coming soon.</p>
-        </div>
-      )
-    case 'registry':
-      return (
-        <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Registry</h2>
-          <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-muted)]">Gift registry coming soon.</p>
         </div>
       )
     case 'faq':
@@ -136,6 +240,9 @@ export default function DesktopPage() {
   )
   const maxZRef = useRef(1)
   const [clock, setClock] = useState<string | null>(null)
+  const [guest, setGuest] = useState<GuestData | null>(null)
+  const [showRoomPrize, setShowRoomPrize] = useState(false)
+  const [roomPrizePos, setRoomPrizePos] = useState({ x: 100, y: 60 })
 
   useEffect(() => {
     function tick() {
@@ -153,24 +260,49 @@ export default function DesktopPage() {
   }, [])
 
   useEffect(() => {
+    fetch('/api/me')
+      .then((r) => (r.ok ? (r.json() as Promise<GuestData>) : null))
+      .then((data) => {
+        if (!data) return
+        setGuest(data)
+        if (data.has_deer_park_room && !sessionStorage.getItem('seenRoomPrize')) {
+          setRoomPrizePos({
+            x: Math.max(10, (window.innerWidth - 460) / 2),
+            y: 60,
+          })
+          setShowRoomPrize(true)
+          sessionStorage.setItem('seenRoomPrize', '1')
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
     const W = window.innerWidth
     const H = window.innerHeight - 28 - 80
     const isMobile = W < 768
-    const cy = Math.max(20, H / 2 - 180)
 
     maxZRef.current = 1
     setWindows((ws) =>
-      ws.map((w) => ({
-        ...w,
-        isOpen: w.id === 'home',
-        zIndex: w.id === 'home' ? 1 : 0,
-        spawnPosition: {
-          x: isMobile
-            ? 10
-            : Math.max(10, (W - getWidth(w.id)) / 2 + STAGGER[w.id].x),
-          y: Math.max(10, cy + STAGGER[w.id].y),
-        },
-      }))
+      ws.map((w) => {
+        let x: number, y: number
+        if (isMobile) {
+          // With max-width: calc(100vw - 80px), the window is 80px narrower than
+          // the viewport, leaving 80px total horizontal room. Centre is at x=40.
+          // Offsets of ±20 keep both edges at least 20px from the screen boundary.
+          x = 40 + MOBILE_STAGGER[w.id].x
+          y = MOBILE_STAGGER[w.id].y
+        } else {
+          x = Math.max(10, (W - getWidth(w.id)) / 2 + STAGGER[w.id].x)
+          y = Math.max(20, 60 + STAGGER[w.id].y)
+        }
+        return {
+          ...w,
+          isOpen: w.id === 'home',
+          zIndex: w.id === 'home' ? 1 : 0,
+          spawnPosition: { x, y },
+        }
+      })
     )
   }, [])
 
@@ -199,7 +331,7 @@ export default function DesktopPage() {
 
   return (
     <div className="fixed inset-0 pt-7 pb-20 overflow-hidden">
-      <TopBar clock={clock} />
+      <TopBar clock={clock} guest={guest} />
       {windows.map((w) =>
         !w.isOpen ? null : (
           <DraggableWindow
@@ -212,9 +344,22 @@ export default function DesktopPage() {
             onFocus={() => focusWindow(w.id)}
             width={getWidth(w.id)}
           >
-            <WindowContent id={w.id} onOpenWindow={toggleWindow} />
+            <WindowContent id={w.id} guest={guest} onOpenWindow={toggleWindow} />
           </DraggableWindow>
         )
+      )}
+      {showRoomPrize && guest && (
+        <DraggableWindow
+          id="room_prize"
+          title="🎊 YOU'RE ON THE LIST! 🎊"
+          initialPosition={roomPrizePos}
+          zIndex={10000}
+          onClose={() => setShowRoomPrize(false)}
+          onFocus={() => {}}
+          width={460}
+        >
+          <RoomPrizeContent firstName={guest.first_name} />
+        </DraggableWindow>
       )}
       <Taskbar
         items={windows.map((w) => ({ id: w.id, label: w.label, icon: w.icon, isOpen: w.isOpen }))}

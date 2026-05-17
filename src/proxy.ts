@@ -6,6 +6,7 @@ export function proxy(request: NextRequest) {
 
   if (
     pathname.startsWith('/login') ||
+    pathname.startsWith('/admin') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
     pathname === '/favicon.ico'
@@ -13,10 +14,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const auth = request.cookies.get('site-auth')?.value
-  const passcode = process.env.SITE_PASSCODE
-
-  if (!passcode || auth !== passcode) {
+  const guestSession = request.cookies.get('guest_session')?.value
+  if (!guestSession) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

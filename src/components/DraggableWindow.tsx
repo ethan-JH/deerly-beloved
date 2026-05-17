@@ -71,24 +71,24 @@ export function DraggableWindow({
 
   return (
     <div
-      className="desktop-window absolute border-2 border-[var(--color-primary)] flex flex-col"
+      className="desktop-window absolute border-2 border-[var(--color-chrome)] bg-[var(--color-chrome)] flex flex-col rounded-lg overflow-hidden"
       style={{
         left: pos.x,
         top: pos.y,
         width,
         zIndex,
-        boxShadow: '4px 4px 0 var(--color-primary)',
+        boxShadow: '2px 2px 0 rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.15)',
       }}
       onMouseDown={onFocus}
       onTouchStart={() => onFocus()}
     >
       <div
-        className="bg-[var(--color-primary)] px-3 py-2 flex items-center justify-between select-none cursor-move shrink-0"
+        className="bg-[var(--color-chrome)] px-3 py-1 flex items-center justify-between select-none cursor-move shrink-0"
         onMouseDown={startDrag}
         onTouchStart={startDragTouch}
       >
         <button
-          className="font-[family-name:var(--font-vt323)] text-[var(--color-bg)]/60 text-xl leading-none cursor-pointer hover:text-[var(--color-bg)] transition-colors"
+          className="font-[family-name:var(--font-vt323)] text-[var(--color-text)]/60 text-xl leading-none cursor-pointer hover:text-[var(--color-text)] transition-colors"
           onMouseDown={(e) => e.stopPropagation()}
           onTouchStart={(e) => e.stopPropagation()}
           onClick={onClose}
@@ -96,12 +96,14 @@ export function DraggableWindow({
         >
           ×
         </button>
-        <span className="font-[family-name:var(--font-vt323)] text-[var(--color-bg)] text-xl tracking-widest uppercase leading-none">
+        <span className="font-[family-name:var(--font-vt323)] text-[var(--color-text)] text-xl tracking-widest uppercase leading-none">
           {title}
         </span>
       </div>
-      <div className="bg-[var(--color-surface)] font-[family-name:var(--font-vt323)] flex-1 overflow-y-auto">
-        {children}
+      <div className="flex-1 overflow-hidden m-2 border border-[var(--color-text)]/20 rounded-md">
+        <div className="bg-[var(--color-surface)] font-[family-name:var(--font-vt323)] h-full overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   )

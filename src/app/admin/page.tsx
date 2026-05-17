@@ -1,20 +1,14 @@
-import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { Window } from '@/components/Window'
+import { AdminLogin } from '@/components/AdminLogin'
 
-interface SearchParams {
-  password?: string
-}
-
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>
-}) {
-  const params = await searchParams
+export default async function AdminPage() {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('admin_session')?.value
   const adminPassword = process.env.ADMIN_PASSWORD
 
-  if (!adminPassword || params.password !== adminPassword) {
-    redirect('/')
+  if (!adminPassword || session !== adminPassword) {
+    return <AdminLogin />
   }
 
   return (
