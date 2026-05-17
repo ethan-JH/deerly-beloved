@@ -31,7 +31,13 @@ export function Taskbar({ items, onToggle }: TaskbarProps) {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-20 z-[9999] border-t-2 border-[var(--color-primary)] bg-[var(--color-bg)] flex items-center px-3 py-2 gap-1">
+    <div
+      className="fixed bottom-0 left-0 right-0 h-20 z-[9999] border-t-2 border-[var(--color-primary)] bg-[var(--color-bg)] flex items-center px-3 py-2 gap-1"
+      style={{
+        backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect x='0' y='0' width='2' height='2' fill='%230D1F3C' fill-opacity='0.1'/%3E%3C/svg%3E\")",
+        backgroundSize: '8px 8px',
+      }}
+    >
 
       {/* ◀ — mobile only */}
       <button
@@ -59,7 +65,7 @@ export function Taskbar({ items, onToggle }: TaskbarProps) {
               onClick={() => onToggle(item.id)}
               className="flex flex-col items-center justify-center gap-1 px-3 py-1 min-w-[72px] h-full cursor-pointer select-none shrink-0 snap-start snap-always"
               style={{
-                background: item.isOpen ? 'rgba(23,96,176,0.08)' : 'var(--color-surface)',
+                background: 'var(--color-surface)',
                 boxShadow: item.isOpen ? PRESSED : RAISED,
               }}
             >
