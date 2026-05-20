@@ -56,7 +56,7 @@ const MOBILE_STAGGER: Record<string, { x: number; y: number }> = {
 }
 
 const WINDOWS_CONFIG = [
-  { id: 'home',      label: 'HOME',      icon: '/icons/home.png',      title: 'BECHAN & ETHAN' },
+  { id: 'home',      label: 'HOME',      icon: '/icons/home.png',      title: 'CONGRATS!'      },
   { id: 'rsvp',      label: 'RSVP',      icon: '/icons/rsvp.png',      title: 'RSVP'           },
   { id: 'stay',      label: 'STAY',      icon: '/icons/stay.png',      title: 'STAY'            },
   { id: 'itinerary', label: 'ITINERARY', icon: '/icons/itinerary.png', title: 'ITINERARY'       },
@@ -118,62 +118,65 @@ function TopBar({ clock, guest }: { clock: string | null; guest: GuestData | nul
   )
 }
 
-function RoomPrizeContent({ firstName }: { firstName: string }) {
-  return (
-    <div className="relative overflow-hidden p-8 text-center" style={{ minHeight: 260 }}>
-      {CONFETTI_PIECES.map((c, i) => (
-        <div
-          key={i}
-          className="confetti-piece"
-          style={{
-            left: c.left,
-            width: c.size,
-            height: c.size,
-            backgroundColor: c.color,
-            animationDelay: c.delay,
-          }}
-        />
-      ))}
-      <div className="relative z-10 flex flex-col items-center gap-4 pt-4">
-        <span className="text-5xl">🎊</span>
-        <h2 className="font-[family-name:var(--font-vt323)] text-3xl tracking-widest text-[var(--color-primary)]">
-          YOU&apos;RE ON THE LIST, {firstName.toUpperCase()}!
-        </h2>
-        <div className="w-8 h-0.5 bg-[var(--color-accent)]" />
-        <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-text)] leading-relaxed max-w-xs">
-          A room at Deer Park Country House has been reserved for the night of Saturday 12th June — yours to book if you&apos;d like to stay on site.
-        </p>
-        <p className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[var(--color-muted)]">
-          Find booking details in the STAY window.
-        </p>
-      </div>
-    </div>
-  )
-}
-
 function WindowContent({ id, guest, onOpenWindow }: { id: string; guest: GuestData | null; onOpenWindow: (id: string) => void }) {
   switch (id) {
     case 'home':
       return (
-        <div className="p-10 text-center flex flex-col items-center">
-          <p className="font-[family-name:var(--font-vt323)] text-base tracking-[0.4em] text-[var(--color-accent)] mb-6">
-            12 June 2027 &nbsp;&middot;&nbsp; Deer Park, Devon
-          </p>
-          <div className="w-12 h-0.5 bg-[var(--color-primary)] mb-6" />
-          <h1 className="crispy font-[family-name:var(--font-playfair)] italic font-normal text-6xl text-[var(--color-primary)] leading-tight mb-6">
-            Bechan<br />&amp; Ethan
-          </h1>
-          <div className="w-12 h-0.5 bg-[var(--color-primary)] mb-6" />
-          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] mb-10 tracking-wide">
-            Deer Park Country House &middot; Devon, England
-          </p>
-          <button
-            onClick={() => onOpenWindow('rsvp')}
-            className="bg-[var(--color-primary)] text-[var(--color-bg)] text-xl tracking-widest px-10 py-3 transition-transform hover:-translate-y-px active:translate-y-0 cursor-pointer font-[family-name:var(--font-vt323)]"
-            style={{ boxShadow: '4px 4px 0 var(--color-accent)' }}
-          >
-            RSVP NOW
-          </button>
+        <div className="relative overflow-hidden text-center" style={{ minHeight: 340 }}>
+          <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+            {CONFETTI_PIECES.map((c, i) => (
+              <div
+                key={i}
+                className="confetti-piece"
+                style={{ left: c.left, width: c.size, height: c.size, backgroundColor: c.color, animationDelay: c.delay }}
+              />
+            ))}
+          </div>
+          <div className="relative z-10 flex flex-col items-center gap-3 px-6 py-5">
+            <div className="flex items-center justify-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/home.png" width={24} height={24} alt="" className="shrink-0" />
+              <span className="font-[family-name:var(--font-vt323)] text-2xl md:text-3xl tracking-widest text-[var(--color-primary)] leading-none">
+                CONGRATULATIONS!
+              </span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/home.png" width={24} height={24} alt="" className="shrink-0" />
+            </div>
+            <div className="w-8 h-0.5 bg-[var(--color-accent)]" />
+            <p className="crispy font-[family-name:var(--font-playfair)] italic text-sm text-[var(--color-text)]">
+              You are cordially invited to the wedding of
+            </p>
+            <h1 className="crispy font-[family-name:var(--font-playfair)] italic font-normal text-4xl text-[var(--color-primary)] leading-tight">
+              Bechan &amp; Ethan
+            </h1>
+            <div className="relative overflow-hidden rounded" style={{ aspectRatio: '4/3', width: '100%', maxWidth: 280 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/photos/88.jpg"
+                alt="Deer Park Country House"
+                className="w-full h-full object-cover"
+                style={{ objectPosition: 'center', imageRendering: 'pixelated' }}
+              />
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center gap-1"
+                style={{ background: 'rgba(13,31,60,0.5)' }}
+              >
+                <p className="font-[family-name:var(--font-vt323)] text-sm tracking-[0.2em] text-[var(--color-bg)]">
+                  SATURDAY &middot; 12TH JUNE 2027
+                </p>
+                <p className="crispy font-[family-name:var(--font-playfair)] italic text-xs text-[var(--color-bg)]/80">
+                  Deer Park Country House &middot; Devon, England
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => onOpenWindow('rsvp')}
+              className="bg-[var(--color-primary)] text-[var(--color-bg)] text-xl tracking-widest px-10 py-3 transition-transform hover:-translate-y-px active:translate-y-0 cursor-pointer font-[family-name:var(--font-vt323)]"
+              style={{ boxShadow: '4px 4px 0 var(--color-accent)' }}
+            >
+              RSVP NOW
+            </button>
+          </div>
         </div>
       )
     case 'rsvp':
@@ -243,8 +246,6 @@ export default function DesktopPage() {
   const [loading, setLoading] = useState(true)
   const [clock, setClock] = useState<string | null>(null)
   const [guest, setGuest] = useState<GuestData | null>(null)
-  const [showRoomPrize, setShowRoomPrize] = useState(false)
-  const [roomPrizePos, setRoomPrizePos] = useState({ x: 100, y: 60 })
 
   useEffect(() => {
     function tick() {
@@ -267,21 +268,12 @@ export default function DesktopPage() {
       .then((data) => {
         if (!data) return
         setGuest(data)
-        if (data.has_deer_park_room && !sessionStorage.getItem('seenRoomPrize')) {
-          setRoomPrizePos({
-            x: Math.max(10, (window.innerWidth - 460) / 2),
-            y: 60,
-          })
-          setShowRoomPrize(true)
-          sessionStorage.setItem('seenRoomPrize', '1')
-        }
       })
       .catch(() => {})
   }, [])
 
   useEffect(() => {
     const W = window.innerWidth
-    const H = window.innerHeight - 28 - 80
     const isMobile = W < 768
 
     maxZRef.current = 1
@@ -361,19 +353,6 @@ export default function DesktopPage() {
                   <WindowContent id={w.id} guest={guest} onOpenWindow={toggleWindow} />
                 </DraggableWindow>
               )
-            )}
-            {showRoomPrize && guest && (
-              <DraggableWindow
-                id="room_prize"
-                title="🎊 YOU'RE ON THE LIST! 🎊"
-                initialPosition={roomPrizePos}
-                zIndex={10000}
-                onClose={() => setShowRoomPrize(false)}
-                onFocus={() => {}}
-                width={460}
-              >
-                <RoomPrizeContent firstName={guest.first_name} />
-              </DraggableWindow>
             )}
           </div>
           <Taskbar

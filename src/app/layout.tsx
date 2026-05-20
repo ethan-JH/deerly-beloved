@@ -18,6 +18,7 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: 'Bechan & Ethan — 12 June 2027',
   description: 'Join us to celebrate our wedding at Deer Park Country House, Devon.',
+  icons: { icon: '/icons/home.png' },
 }
 
 export default function RootLayout({
