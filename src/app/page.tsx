@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { DraggableWindow } from '@/components/DraggableWindow'
 import { Taskbar } from '@/components/Taskbar'
+import { LoadingScreen } from '@/components/LoadingScreen'
 
 interface WinState {
   id: string
@@ -239,6 +240,7 @@ export default function DesktopPage() {
     }))
   )
   const maxZRef = useRef(1)
+  const [loading, setLoading] = useState(true)
   const [clock, setClock] = useState<string | null>(null)
   const [guest, setGuest] = useState<GuestData | null>(null)
   const [showRoomPrize, setShowRoomPrize] = useState(false)
@@ -330,41 +332,56 @@ export default function DesktopPage() {
   }
 
   return (
-    <div className="fixed inset-0 pt-7 pb-20 overflow-hidden">
-      <TopBar clock={clock} guest={guest} />
-      {windows.map((w) =>
-        !w.isOpen ? null : (
-          <DraggableWindow
-            key={w.id}
-            id={w.id}
-            title={w.title}
-            initialPosition={w.spawnPosition}
-            zIndex={w.zIndex}
-            onClose={() => closeWindow(w.id)}
-            onFocus={() => focusWindow(w.id)}
-            width={getWidth(w.id)}
-          >
-            <WindowContent id={w.id} guest={guest} onOpenWindow={toggleWindow} />
-          </DraggableWindow>
-        )
+    <div
+      className="fixed inset-0 overflow-hidden"
+      style={{
+        backgroundImage: "url('/background/pacific-breeze.png')",
+        backgroundRepeat: 'repeat',
+        imageRendering: 'pixelated',
+      }}
+    >
+      {loading && <LoadingScreen onComplete={() => setLoading(false)} />}
+
+      {!loading && (
+        <>
+          <TopBar clock={clock} guest={guest} />
+          <div className="absolute inset-0 pt-7 pb-20 overflow-hidden">
+            {windows.map((w) =>
+              !w.isOpen ? null : (
+                <DraggableWindow
+                  key={w.id}
+                  id={w.id}
+                  title={w.title}
+                  initialPosition={w.spawnPosition}
+                  zIndex={w.zIndex}
+                  onClose={() => closeWindow(w.id)}
+                  onFocus={() => focusWindow(w.id)}
+                  width={getWidth(w.id)}
+                >
+                  <WindowContent id={w.id} guest={guest} onOpenWindow={toggleWindow} />
+                </DraggableWindow>
+              )
+            )}
+            {showRoomPrize && guest && (
+              <DraggableWindow
+                id="room_prize"
+                title="🎊 YOU'RE ON THE LIST! 🎊"
+                initialPosition={roomPrizePos}
+                zIndex={10000}
+                onClose={() => setShowRoomPrize(false)}
+                onFocus={() => {}}
+                width={460}
+              >
+                <RoomPrizeContent firstName={guest.first_name} />
+              </DraggableWindow>
+            )}
+          </div>
+          <Taskbar
+            items={windows.map((w) => ({ id: w.id, label: w.label, icon: w.icon, isOpen: w.isOpen }))}
+            onToggle={toggleWindow}
+          />
+        </>
       )}
-      {showRoomPrize && guest && (
-        <DraggableWindow
-          id="room_prize"
-          title="🎊 YOU'RE ON THE LIST! 🎊"
-          initialPosition={roomPrizePos}
-          zIndex={10000}
-          onClose={() => setShowRoomPrize(false)}
-          onFocus={() => {}}
-          width={460}
-        >
-          <RoomPrizeContent firstName={guest.first_name} />
-        </DraggableWindow>
-      )}
-      <Taskbar
-        items={windows.map((w) => ({ id: w.id, label: w.label, icon: w.icon, isOpen: w.isOpen }))}
-        onToggle={toggleWindow}
-      />
     </div>
   )
 }

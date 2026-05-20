@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:push": "supabase db push",
-    "db:seed": "node scripts/seed.mjs"
+    "db:seed": "node scripts/seed.mjs",
+    "photos": "node scripts/compress-photos.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
@@ -22,9 +23,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sharp": "^0.31.1",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "sharp": "^0.34.5",
     "supabase": "^2.98.2",
     "tailwindcss": "^4",
     "typescript": "^5"
