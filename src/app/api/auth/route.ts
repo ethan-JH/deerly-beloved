@@ -10,20 +10,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Passcode required' }, { status: 400 })
   }
 
-  const { data: guest, error } = await getSupabaseAdmin()
-    .from('guests')
+  const { data: invite, error } = await getSupabaseAdmin()
+    .from('invites')
     .select('id')
     .eq('password', passcode)
     .single()
 
-  if (error || !guest) {
+  if (error || !invite) {
     return NextResponse.json({ error: 'Invalid passcode' }, { status: 401 })
   }
 
-  const guestId = (guest as { id: string }).id
+  const inviteId = (invite as { id: string }).id
 
   const response = NextResponse.json({ success: true })
-  response.cookies.set('guest_session', guestId, {
+  response.cookies.set('guest_session', inviteId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',

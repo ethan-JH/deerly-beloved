@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { DraggableWindow } from '@/components/DraggableWindow'
 import { Taskbar } from '@/components/Taskbar'
 import { LoadingScreen } from '@/components/LoadingScreen'
+import { BreakoutGame } from '@/components/BreakoutGame'
 
 interface WinState {
   id: string
@@ -15,16 +16,25 @@ interface WinState {
   spawnPosition: { x: number; y: number }
 }
 
-interface GuestData {
+interface GuestMember {
   id: string
   first_name: string
   last_name: string
-  has_deer_park_room: boolean
-  friday_invited: boolean
-  plus_one_allowed: boolean
   rsvp_submitted_at: string | null
   attending_saturday: boolean | null
   attending_friday: boolean | null
+  dietary: string | null
+  song_request: string | null
+  message: string | null
+}
+
+interface InviteData {
+  id: string
+  display_name: string
+  email: string | null
+  has_deer_park_room: boolean
+  friday_invited: boolean
+  guests: GuestMember[]
 }
 
 const FALLBACK_POSITIONS: Record<string, { x: number; y: number }> = {
@@ -34,6 +44,7 @@ const FALLBACK_POSITIONS: Record<string, { x: number; y: number }> = {
   itinerary: { x: 220, y: 100 },
   travel:    { x: 180, y: 120 },
   faq:       { x: 260, y: 90  },
+  secret:    { x: 140, y: 100 },
 }
 
 const STAGGER: Record<string, { x: number; y: number }> = {
@@ -43,6 +54,7 @@ const STAGGER: Record<string, { x: number; y: number }> = {
   itinerary: { x: 20,  y: 20 },
   travel:    { x: -20, y: 40 },
   faq:       { x: 60,  y: 10 },
+  secret:    { x: -60, y: 20 },
 }
 
 // Mobile: offsets from x=40 (centre of 80px total margin); y is absolute from top
@@ -53,6 +65,7 @@ const MOBILE_STAGGER: Record<string, { x: number; y: number }> = {
   itinerary: { x:  18, y: 65 },
   travel:    { x: -18, y: 85 },
   faq:       { x:  10, y: 70 },
+  secret:    { x:   0, y: 60 },
 }
 
 const WINDOWS_CONFIG = [
@@ -62,10 +75,11 @@ const WINDOWS_CONFIG = [
   { id: 'itinerary', label: 'ITINERARY', icon: '/icons/itinerary.png', title: 'ITINERARY'       },
   { id: 'travel',    label: 'TRAVEL',    icon: '/icons/travel.png',    title: 'TRAVEL'          },
   { id: 'faq',       label: 'FAQ',       icon: '/icons/faq.png',       title: 'FAQ'             },
+  { id: 'secret',    label: 'SECRET',    icon: '/icons/secret.png',    title: 'BREAKOUT!'       },
 ]
 
 function getWidth(id: string): number {
-  return id === 'home' ? 560 : 480
+  return id === 'home' ? 560 : id === 'secret' ? 440 : 480
 }
 
 // Fixed positions/delays avoid SSR hydration mismatch from Math.random()
@@ -93,7 +107,7 @@ const CHROME_BTN = {
   boxShadow: '2px 2px 0 rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.15)',
 } as const
 
-function TopBar({ clock, guest }: { clock: string | null; guest: GuestData | null }) {
+function TopBar({ clock, invite }: { clock: string | null; invite: InviteData | null }) {
   return (
     <>
       <div
@@ -101,7 +115,7 @@ function TopBar({ clock, guest }: { clock: string | null; guest: GuestData | nul
         style={CHROME_BTN}
       >
         <span className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-text)] tracking-widest leading-none">
-          {guest ? `WELCOME, ${guest.first_name.toUpperCase()}` : 'BECHAN & ETHAN'}
+          {invite ? `WELCOME, ${invite.display_name.toUpperCase()}` : 'BECHAN & ETHAN'}
         </span>
       </div>
       {clock && (
@@ -118,7 +132,7 @@ function TopBar({ clock, guest }: { clock: string | null; guest: GuestData | nul
   )
 }
 
-function WindowContent({ id, guest, onOpenWindow }: { id: string; guest: GuestData | null; onOpenWindow: (id: string) => void }) {
+function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: InviteData | null; onOpenWindow: (id: string) => void }) {
   switch (id) {
     case 'home':
       return (
@@ -184,12 +198,12 @@ function WindowContent({ id, guest, onOpenWindow }: { id: string; guest: GuestDa
         <div className="p-8">
           <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">RSVP</h2>
           <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)]">
-            {guest ? `Let us know if you can make it, ${guest.first_name}.` : 'RSVP form coming soon.'}
+            {invite ? `Let us know if you can make it, ${invite.guests.map(g => g.first_name).join(' & ')}.` : 'RSVP form coming soon.'}
           </p>
         </div>
       )
     case 'stay':
-      return guest?.has_deer_park_room ? (
+      return invite?.has_deer_park_room ? (
         <div className="p-8">
           <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Your Stay</h2>
           <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] mb-4 leading-relaxed">
@@ -228,6 +242,8 @@ function WindowContent({ id, guest, onOpenWindow }: { id: string; guest: GuestDa
           <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-muted)]">FAQs coming soon.</p>
         </div>
       )
+    case 'secret':
+      return <BreakoutGame invite={invite} />
     default:
       return null
   }
@@ -245,7 +261,7 @@ export default function DesktopPage() {
   const maxZRef = useRef(1)
   const [loading, setLoading] = useState(true)
   const [clock, setClock] = useState<string | null>(null)
-  const [guest, setGuest] = useState<GuestData | null>(null)
+  const [invite, setInvite] = useState<InviteData | null>(null)
 
   useEffect(() => {
     function tick() {
@@ -264,10 +280,10 @@ export default function DesktopPage() {
 
   useEffect(() => {
     fetch('/api/me')
-      .then((r) => (r.ok ? (r.json() as Promise<GuestData>) : null))
+      .then((r) => (r.ok ? (r.json() as Promise<InviteData>) : null))
       .then((data) => {
         if (!data) return
-        setGuest(data)
+        setInvite(data)
       })
       .catch(() => {})
   }, [])
@@ -336,7 +352,7 @@ export default function DesktopPage() {
 
       {!loading && (
         <>
-          <TopBar clock={clock} guest={guest} />
+          <TopBar clock={clock} invite={invite} />
           <div className="absolute inset-0 pt-7 pb-20 overflow-hidden">
             {windows.map((w) =>
               !w.isOpen ? null : (
@@ -350,7 +366,7 @@ export default function DesktopPage() {
                   onFocus={() => focusWindow(w.id)}
                   width={getWidth(w.id)}
                 >
-                  <WindowContent id={w.id} guest={guest} onOpenWindow={toggleWindow} />
+                  <WindowContent id={w.id} invite={invite} onOpenWindow={toggleWindow} />
                 </DraggableWindow>
               )
             )}
