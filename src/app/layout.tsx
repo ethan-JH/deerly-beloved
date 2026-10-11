@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { VT323, Playfair_Display } from 'next/font/google'
 import './globals.css'
+import { Crispometer } from '@/components/Crispometer'
 
 const vt323 = VT323({
   variable: '--font-vt323',
@@ -35,8 +36,8 @@ export default function RootLayout({
             <filter id="grain" x="-5%" y="-5%" width="110%" height="110%">
               {/* Noise source — used for both edge displacement and surface grain */}
               <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="4" seed="2" stitchTiles="stitch" result="noise" />
-              {/* Edge roughness: displaces letter outlines by up to 3px based on noise */}
-              <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+              {/* Edge roughness: displaces letter outlines based on noise */}
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.00" xChannelSelector="R" yChannelSelector="G" result="displaced" />
               {/* Surface grain: clips noise to letter faces, blends softly */}
               <feColorMatrix in="noise" type="saturate" values="0" result="grayNoise" />
               <feComposite operator="in" in="grayNoise" in2="displaced" result="maskedGrain" />
@@ -45,6 +46,7 @@ export default function RootLayout({
           </defs>
         </svg>
         {children}
+        {process.env.NODE_ENV === 'development' && <Crispometer />}
       </body>
     </html>
   )

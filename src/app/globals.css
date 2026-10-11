@@ -45,10 +45,10 @@ body {
   background: var(--color-text);
 }
 
-/* Crispy grain texture for Playfair Display text */
+
+/* Grain texture for Playfair Display text */
 .crispy {
-  -webkit-font-smoothing: none;
-  filter: url(#grain) contrast(1.2);
+  filter: url(#grain) contrast(1.06);
 }
 
 /* Windows cap at viewport width on small screens */
@@ -111,4 +111,45 @@ body {
 }
 .taskbar-items::-webkit-scrollbar-button:horizontal:increment {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpolygon points='0,0 7,3.5 0,7' fill='%23FAF4C6'/%3E%3C/svg%3E");
+}
+
+/* Window content scroll area — same retro Win95 style, vertical orientation */
+.window-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary) var(--color-bg);
+}
+.window-scroll::-webkit-scrollbar {
+  width: 14px;
+}
+.window-scroll::-webkit-scrollbar-track {
+  background: var(--color-bg);
+  border-left: 1px solid rgba(23,96,176,0.3);
+}
+.window-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border: 1px solid rgba(23,96,176,0.6);
+  box-shadow: inset -1px -1px 0 rgba(0,0,0,0.4), inset 1px 1px 0 rgba(250,244,198,0.3);
+}
+.window-scroll::-webkit-scrollbar-thumb:active {
+  box-shadow: inset 1px 1px 0 rgba(0,0,0,0.4), inset -1px -1px 0 rgba(250,244,198,0.3);
+}
+.window-scroll::-webkit-scrollbar-button {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background-color: var(--color-primary);
+  border: 1px solid rgba(23,96,176,0.6);
+  box-shadow: inset -1px -1px 0 rgba(0,0,0,0.4), inset 1px 1px 0 rgba(250,244,198,0.3);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 7px 7px;
+}
+.window-scroll::-webkit-scrollbar-button:active {
+  box-shadow: inset 1px 1px 0 rgba(0,0,0,0.4), inset -1px -1px 0 rgba(250,244,198,0.3);
+}
+.window-scroll::-webkit-scrollbar-button:vertical:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpolygon points='3.5,0 7,7 0,7' fill='%23FAF4C6'/%3E%3C/svg%3E");
+}
+.window-scroll::-webkit-scrollbar-button:vertical:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpolygon points='0,0 7,0 3.5,7' fill='%23FAF4C6'/%3E%3C/svg%3E");
 }

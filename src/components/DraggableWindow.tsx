@@ -13,6 +13,7 @@ interface DraggableWindowProps {
   onClose: () => void
   onFocus: () => void
   width: number
+  noScroll?: boolean
 }
 
 export function DraggableWindow({
@@ -23,6 +24,7 @@ export function DraggableWindow({
   onClose,
   onFocus,
   width,
+  noScroll = false,
 }: DraggableWindowProps) {
   const [pos, setPos] = useState<Position>(initialPosition)
   const drag = useRef({ isDragging: false, ox: 0, oy: 0 })
@@ -71,12 +73,14 @@ export function DraggableWindow({
 
   return (
     <div
-      className="desktop-window absolute border-2 border-[var(--color-chrome)] bg-[var(--color-chrome)] flex flex-col rounded-lg overflow-hidden"
+      className="desktop-window absolute border-2 border-[var(--color-chrome)] bg-[var(--color-chrome)] grid rounded-lg overflow-hidden"
       style={{
         left: pos.x,
         top: pos.y,
         width,
         zIndex,
+        maxHeight: `calc(100dvh - ${Math.max(pos.y, 0)}px - 96px)`,
+        gridTemplateRows: 'auto minmax(0, 1fr)',
         boxShadow: '2px 2px 0 rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.15)',
       }}
       onMouseDown={onFocus}
@@ -100,8 +104,12 @@ export function DraggableWindow({
           {title}
         </span>
       </div>
-      <div className="flex-1 overflow-hidden m-2 border border-[var(--color-text)]/20 rounded-md">
-        <div className="bg-[var(--color-surface)] font-[family-name:var(--font-vt323)] h-full overflow-y-auto">
+      <div className="min-h-0 overflow-hidden m-2 border border-[var(--color-text)]/20 rounded-md">
+        <div
+          className={`bg-[var(--color-surface)] font-[family-name:var(--font-vt323)] h-full ${
+            noScroll ? 'overflow-hidden' : 'window-scroll overflow-y-auto'
+          }`}
+        >
           {children}
         </div>
       </div>

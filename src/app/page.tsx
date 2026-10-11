@@ -5,6 +5,7 @@ import { DraggableWindow } from '@/components/DraggableWindow'
 import { Taskbar } from '@/components/Taskbar'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { BreakoutGame } from '@/components/BreakoutGame'
+import { RsvpForm } from '@/components/RsvpForm'
 
 interface WinState {
   id: string
@@ -32,10 +33,18 @@ interface InviteData {
   id: string
   display_name: string
   email: string | null
-  has_deer_park_room: boolean
+  room_counts: Record<string, number>
+  room_accepted: Record<string, (boolean | null)[]>
   friday_invited: boolean
   guests: GuestMember[]
 }
+
+const ROOM_TYPES = {
+  main_house_double: { label: 'Main House Double', price: '£150 per night' },
+  garden_double:     { label: 'Garden Double',      price: '£150 per night' },
+  garden_single:     { label: 'Garden Single',      price: '£75 per night'  },
+  treehouse:         { label: 'The Treehouse',       price: 'Bridal Suite'   },
+} as const
 
 const FALLBACK_POSITIONS: Record<string, { x: number; y: number }> = {
   home:      { x: 200, y: 80  },
@@ -151,7 +160,7 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/home.png" width={24} height={24} alt="" className="shrink-0" />
               <span className="font-[family-name:var(--font-vt323)] text-2xl md:text-3xl tracking-widest text-[var(--color-primary)] leading-none">
-                CONGRATULATIONS!
+                {invite ? `CONGRATULATIONS ${invite.display_name.toUpperCase()}!` : 'CONGRATULATIONS!'}
               </span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/home.png" width={24} height={24} alt="" className="shrink-0" />
@@ -194,51 +203,104 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
         </div>
       )
     case 'rsvp':
-      return (
+      return <RsvpForm invite={invite} onOpenItinerary={() => onOpenWindow('itinerary')} />
+    case 'stay': {
+      const assignedRooms = Object.entries(invite?.room_counts ?? {})
+        .filter(([, n]) => n > 0)
+        .flatMap(([type, n]) => {
+          const info = ROOM_TYPES[type as keyof typeof ROOM_TYPES]
+          return info ? [{ label: info.label as string, price: info.price as string, count: n }] : []
+        })
+      return assignedRooms.length > 0 ? (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">RSVP</h2>
-          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)]">
-            {invite ? `Let us know if you can make it, ${invite.guests.map(g => g.first_name).join(' & ')}.` : 'RSVP form coming soon.'}
-          </p>
-        </div>
-      )
-    case 'stay':
-      return invite?.has_deer_park_room ? (
-        <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Your Stay</h2>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">Your Stay</h2>
           <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] mb-4 leading-relaxed">
-            A room at Deer Park Country House has been reserved for the night of Saturday 12th June 2027 — yours to book if you&apos;d like to stay on site.
+            A room at Deer Park Country House has been reserved for you for the night of Saturday 12th June 2027.
           </p>
-          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] leading-relaxed">
+          {assignedRooms.map((r, i) => (
+            <div key={i} className="mb-3">
+              <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
+                {r.label}{r.count > 1 ? ` × ${r.count}` : ''}
+              </p>
+              <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)]">
+                {r.price}
+              </p>
+            </div>
+          ))}
+          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] leading-relaxed mt-4">
             Booking details coming soon.
           </p>
         </div>
       ) : (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Places to Stay</h2>
-          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)]">
-            Accommodation suggestions coming soon.
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">Places to Stay</h2>
+          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] mb-5 leading-relaxed">
+            We don&apos;t have a room booked for you at Deer Park, but there&apos;s plenty of lovely accommodation
+            nearby in and around Honiton — here are a few options to get you started.
+          </p>
+
+          <div className="mb-4">
+            <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
+              The Pig at Combe
+            </p>
+            <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
+              The boujee option, and a very short drive from Deer Park. Beautiful grounds, a fantastic restaurant —
+              worth the splurge. Note they require a minimum 2-night stay on weekends, so book early.
+            </p>
+          </div>
+
+          <div className="mb-4">
+            <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
+              The Tumbling Weir Hotel &amp; Restaurant
+            </p>
+            <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
+              A comfortable, budget-friendly option right in Honiton.
+            </p>
+          </div>
+
+          <div className="mb-4">
+            <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
+              Buckley Farmhouse
+            </p>
+            <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
+              A charming farmhouse B&amp;B with excellent reviews, a little further out.
+            </p>
+          </div>
+
+          <div className="mb-5">
+            <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
+              The White Hart Inn, Wilmington
+            </p>
+            <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
+              A cosy village inn a short drive away.
+            </p>
+          </div>
+
+          <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
+            There are also plenty of Airbnbs dotted around the area if you&apos;d prefer somewhere more independent —
+            worth a search if the above don&apos;t take your fancy.
           </p>
         </div>
       )
+    }
     case 'itinerary':
       return (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">The Weekend</h2>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">The Weekend</h2>
           <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-muted)]">Weekend itinerary coming soon.</p>
         </div>
       )
     case 'travel':
       return (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">Getting There</h2>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">Getting There</h2>
           <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-muted)]">Travel information coming soon.</p>
         </div>
       )
     case 'faq':
       return (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-text)] mb-4">FAQ</h2>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">FAQ</h2>
           <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-muted)]">FAQs coming soon.</p>
         </div>
       )
@@ -365,6 +427,7 @@ export default function DesktopPage() {
                   onClose={() => closeWindow(w.id)}
                   onFocus={() => focusWindow(w.id)}
                   width={getWidth(w.id)}
+                  noScroll={w.id === 'secret'}
                 >
                   <WindowContent id={w.id} invite={invite} onOpenWindow={toggleWindow} />
                 </DraggableWindow>

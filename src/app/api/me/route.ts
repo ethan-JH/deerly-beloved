@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
   const { data: invite, error: inviteError } = await db
     .from('invites')
-    .select('id, display_name, email, has_deer_park_room, friday_invited')
+    .select('id, display_name, email, room_counts, room_accepted, friday_invited')
     .eq('id', inviteId)
     .single()
 
