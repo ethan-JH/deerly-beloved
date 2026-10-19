@@ -22,9 +22,21 @@ export async function GET(request: NextRequest) {
 
   const { data: guests } = await db
     .from('guests')
-    .select('id, first_name, last_name, rsvp_submitted_at, attending_saturday, attending_friday, dietary, song_request, message')
+    .select('id, first_name, last_name, rsvp_submitted_at, attending_saturday, attending_friday, attending_sunday, dietary, song_request, message')
     .eq('invite_id', inviteId)
     .order('created_at', { ascending: true })
 
-  return NextResponse.json({ ...invite, guests: guests ?? [] })
+  const { data: config } = await db
+    .from('app_config')
+    .select('key, value')
+    .in('key', ['sunday_venue_short', 'sunday_venue_address'])
+
+  const configMap = Object.fromEntries((config ?? []).map(c => [c.key, c.value]))
+
+  return NextResponse.json({
+    ...invite,
+    guests: guests ?? [],
+    sunday_venue_short: configMap.sunday_venue_short ?? null,
+    sunday_venue_address: configMap.sunday_venue_address ?? null,
+  })
 }

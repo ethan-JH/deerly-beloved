@@ -15,6 +15,8 @@ interface GuestMember {
   last_name: string
   attending_saturday: boolean | null
   attending_friday: boolean | null
+  attending_sunday: boolean | null
+  dietary: string | null
 }
 
 interface RsvpInvite {
@@ -23,11 +25,14 @@ interface RsvpInvite {
   room_accepted: Record<string, (boolean | null)[]>
   friday_invited: boolean
   guests: GuestMember[]
+  sunday_venue_address: string | null
 }
 
 interface GuestState {
   attending_saturday: boolean | null
   attending_friday: boolean | null
+  attending_sunday: boolean | null
+  dietary: string
 }
 
 const RAISED  = 'inset -2px -2px 0 rgba(23,96,176,0.45), inset 2px 2px 0 rgb(250,244,198)'
@@ -64,6 +69,22 @@ function Divider() {
   return <div className="w-full h-px bg-[var(--color-text)]/10" />
 }
 
+function StatusLine({ label, value }: { label: string; value: boolean | null }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-0.5">
+      <span className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] flex-1 leading-snug">
+        {label}
+      </span>
+      <span
+        className="font-[family-name:var(--font-vt323)] text-xs tracking-widest shrink-0"
+        style={{ color: value === null ? 'var(--color-muted)' : value ? 'var(--color-accent)' : 'var(--color-muted)' }}
+      >
+        {value === null ? 'NOT ANSWERED' : value ? '✓ YES' : '✗ NO'}
+      </span>
+    </div>
+  )
+}
+
 function Photo({ src, caption, className = '', objectPosition = 'center' }: { src: string; caption: string; className?: string; objectPosition?: string }) {
   return (
     <figure className={className}>
@@ -85,6 +106,8 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
   const [saving, setSaving]             = useState(false)
   const [saved, setSaved]               = useState(false)
   const [initialized, setInitialized]   = useState(false)
+  const [editMode, setEditMode]         = useState(true)
+  const [hasRsvped, setHasRsvped]       = useState(false)
 
   useEffect(() => {
     if (invite && !initialized) {
@@ -93,11 +116,16 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
         states[g.id] = {
           attending_saturday: g.attending_saturday,
           attending_friday:   g.attending_friday,
+          attending_sunday:   g.attending_sunday,
+          dietary:            g.dietary ?? '',
         }
       }
       setGuestStates(states)
       setEmail(invite.email ?? '')
       setRoomAccepted(invite.room_accepted)
+      const submitted = invite.guests.some(g => g.attending_saturday !== null || g.attending_friday !== null || g.attending_sunday !== null)
+      setHasRsvped(submitted)
+      setEditMode(!submitted)
       setInitialized(true)
     }
   }, [invite, initialized])
@@ -114,7 +142,6 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
 
   const hasRooms     = Object.values(invite.room_counts ?? {}).some(n => n > 0)
   const assignedRooms = Object.entries(invite.room_counts ?? {}).filter(([, n]) => n > 0)
-  const alreadyRsvped = invite.guests.some(g => g.attending_saturday !== null || g.attending_friday !== null)
   const multipleGuests = invite.guests.length > 1
 
   async function handleSubmit(e: React.FormEvent) {
@@ -125,6 +152,8 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
       id: g.id,
       attending_saturday: guestStates[g.id]?.attending_saturday ?? null,
       attending_friday:   guestStates[g.id]?.attending_friday   ?? null,
+      attending_sunday:   guestStates[g.id]?.attending_sunday   ?? null,
+      dietary:            guestStates[g.id]?.dietary.trim()     || null,
     }))
     await fetch('/api/rsvp', {
       method: 'POST',
@@ -133,6 +162,8 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
     })
     setSaving(false)
     setSaved(true)
+    setHasRsvped(true)
+    setEditMode(false)
     setTimeout(() => setSaved(false), 3500)
   }
 
@@ -182,101 +213,207 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
         </div>
 
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
+          As another optional extra for post-wedding recovery, on Sunday 13th June Bechan&apos;s parents Dale &amp; Catherine
+          have very kindly offered to host a BBQ brunch back at their family home in Broadhembury; the address is
+        </p>
+        <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-text)] leading-relaxed text-center">
+          {invite.sunday_venue_address
+            ? invite.sunday_venue_address.split('\n').map((line, i) => <span key={i}>{line}<br /></span>)
+            : 'Address details coming soon.'}
+        </p>
+        <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
+          There is a pool so bring your swimmers for a dip to cure your sore head. We don&apos;t want to make any premature
+          promises but a hog roast has been thrown around as a possibility if enough folk are coming, so let us know if
+          you fancy it.
+        </p>
+
+        <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
           If you can make it we can&apos;t wait to welcome you to Devon!
         </p>
       </div>
 
       <Divider />
 
-      {/* Per-guest attendance */}
-      <div className="space-y-5">
-        {invite.guests.map(g => (
-          <div key={g.id} className="space-y-2">
-            {multipleGuests && (
-              <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-primary)]">
-                {g.first_name.toUpperCase()} {g.last_name.toUpperCase()}
-              </div>
-            )}
-            <YesNo
-              label="Saturday 12th June — Deer Park Country House?"
-              value={guestStates[g.id]?.attending_saturday ?? null}
-              onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_saturday: v } }))}
-            />
-            <YesNo
-              label="Friday 11th June — St Andrew's Church, Broadhembury?"
-              value={guestStates[g.id]?.attending_friday ?? null}
-              onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_friday: v } }))}
-            />
-          </div>
-        ))}
-      </div>
+      {saved && (
+        <p className="crispy text-center font-[family-name:var(--font-playfair)] italic text-sm text-[var(--color-accent)]">
+          Thanks! We can&apos;t wait to see you. ✓
+        </p>
+      )}
 
-      {/* Room section */}
-      {hasRooms && (
-        <>
-          <Divider />
-          <div className="space-y-3">
-            <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
-              You lucky duck{multipleGuests ? 's' : ''}! We have limited rooms at Deer Park for the Saturday night but we love
-              you so much / want you to stay up late so we prioritised giving you a room. Please brag loudly at the wedding
-              about how much better you are than the other guests and how much more we like you. We&apos;ve put the price per
-              night of the room beside the input, but if you&apos;d rather sort out your own accommodation that&apos;s equally no
-              issue. Just let us know and we&apos;ll give someone else the bragging rights.
-            </p>
-            <div className="space-y-1.5">
+      {!editMode ? (
+        /* ── Summary view — shown once RSVPed, to stop accidental resubmission ── */
+        <div className="space-y-5">
+          <p className="crispy font-[family-name:var(--font-playfair)] italic text-base text-[var(--color-text)]">
+            Here&apos;s what we&apos;ve got on file for you:
+          </p>
+
+          <div className="space-y-4">
+            {invite.guests.map(g => (
+              <div key={g.id} className="space-y-0.5">
+                {multipleGuests && (
+                  <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-primary)]">
+                    {g.first_name.toUpperCase()} {g.last_name.toUpperCase()}
+                  </div>
+                )}
+                <StatusLine label="Saturday 12th June — Deer Park" value={guestStates[g.id]?.attending_saturday ?? null} />
+                <StatusLine label="Friday 11th June — St Andrew's Church" value={guestStates[g.id]?.attending_friday ?? null} />
+                <StatusLine label="Sunday 13th June — BBQ brunch" value={guestStates[g.id]?.attending_sunday ?? null} />
+                {guestStates[g.id]?.dietary && (
+                  <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">
+                    DIETARY: {guestStates[g.id].dietary}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {hasRooms && (
+            <div className="space-y-0.5">
+              <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-primary)]">ROOMS</div>
               {assignedRooms.flatMap(([type, count]) => {
                 const info = ROOM_TYPES[type]
                 if (!info) return []
                 return Array.from({ length: count }, (_, i) => (
-                  <YesNo
+                  <StatusLine
                     key={`${type}-${i}`}
-                    label={`${info.label}${count > 1 ? ` #${i + 1}` : ''} — ${info.price}`}
+                    label={`${info.label}${count > 1 ? ` #${i + 1}` : ''}`}
                     value={roomAccepted[type]?.[i] ?? null}
-                    onChange={v => setRoomAccepted(r => {
-                      const arr = [...(r[type] ?? Array(count).fill(null))]
-                      arr[i] = v
-                      return { ...r, [type]: arr }
-                    })}
                   />
                 ))
               })}
             </div>
+          )}
+
+          {email && (
+            <p className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">
+              EMAIL ON FILE: {email}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setEditMode(true)}
+            className="w-full bg-[var(--color-primary)] text-[var(--color-bg)] py-3 font-[family-name:var(--font-vt323)] text-xl tracking-widest cursor-pointer"
+            style={{ boxShadow: '3px 3px 0 var(--color-accent)' }}
+          >
+            UPDATE MY RSVP
+          </button>
+        </div>
+      ) : (
+        /* ── Editable form ── */
+        <>
+          {/* Per-guest attendance */}
+          <div className="space-y-5">
+            {invite.guests.map(g => (
+              <div key={g.id} className="space-y-2">
+                {multipleGuests && (
+                  <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-primary)]">
+                    {g.first_name.toUpperCase()} {g.last_name.toUpperCase()}
+                  </div>
+                )}
+                <YesNo
+                  label="Saturday 12th June — Deer Park Country House?"
+                  value={guestStates[g.id]?.attending_saturday ?? null}
+                  onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_saturday: v } }))}
+                />
+                <YesNo
+                  label="Friday 11th June — St Andrew's Church, Broadhembury?"
+                  value={guestStates[g.id]?.attending_friday ?? null}
+                  onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_friday: v } }))}
+                />
+                <YesNo
+                  label="Sunday 13th June — BBQ brunch at Bechan's family home?"
+                  value={guestStates[g.id]?.attending_sunday ?? null}
+                  onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_sunday: v } }))}
+                />
+                <div className="pt-1">
+                  <label className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">
+                    DIETARY REQUIREMENTS (IF ANY)
+                  </label>
+                  <input
+                    type="text"
+                    value={guestStates[g.id]?.dietary ?? ''}
+                    onChange={e => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], dietary: e.target.value } }))}
+                    placeholder="e.g. vegetarian, nut allergy, gluten free…"
+                    className="w-full mt-1 border border-[var(--color-primary)]/40 bg-transparent px-3 py-2 font-[family-name:var(--font-vt323)] text-sm tracking-wide text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Room section */}
+          {hasRooms && (
+            <>
+              <Divider />
+              <div className="space-y-3">
+                <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
+                  You lucky duck{multipleGuests ? 's' : ''}! We have limited rooms at Deer Park for the Saturday night but we love
+                  you so much / want you to stay up late so we prioritised giving you a room. Please brag loudly at the wedding
+                  about how much better you are than the other guests and how much more we like you. We&apos;ve put the price per
+                  night of the room beside the input, but if you&apos;d rather sort out your own accommodation that&apos;s equally no
+                  issue. Just let us know and we&apos;ll give someone else the bragging rights.
+                </p>
+                <div className="space-y-1.5">
+                  {assignedRooms.flatMap(([type, count]) => {
+                    const info = ROOM_TYPES[type]
+                    if (!info) return []
+                    return Array.from({ length: count }, (_, i) => (
+                      <YesNo
+                        key={`${type}-${i}`}
+                        label={`${info.label}${count > 1 ? ` #${i + 1}` : ''} — ${info.price}`}
+                        value={roomAccepted[type]?.[i] ?? null}
+                        onChange={v => setRoomAccepted(r => {
+                          const arr = [...(r[type] ?? Array(count).fill(null))]
+                          arr[i] = v
+                          return { ...r, [type]: arr }
+                        })}
+                      />
+                    ))
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          <Divider />
+
+          {/* Email */}
+          <div className="space-y-1.5">
+            <label className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">
+              EMAIL — WE&apos;LL SEND YOUR RSVP CONFIRMATION HERE
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              className="w-full border border-[var(--color-primary)]/40 bg-transparent px-3 py-2 font-[family-name:var(--font-vt323)] text-sm tracking-wide text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+            />
+          </div>
+
+          {/* Submit */}
+          <div className="space-y-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full bg-[var(--color-primary)] text-[var(--color-bg)] py-3 font-[family-name:var(--font-vt323)] text-xl tracking-widest cursor-pointer disabled:opacity-50 transition-opacity"
+              style={{ boxShadow: '3px 3px 0 var(--color-accent)' }}
+            >
+              {saving ? 'SAVING…' : hasRsvped ? 'UPDATE RSVP' : 'SEND RSVP'}
+            </button>
+            {hasRsvped && (
+              <button
+                type="button"
+                onClick={() => setEditMode(false)}
+                className="w-full font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)] cursor-pointer py-1"
+              >
+                CANCEL
+              </button>
+            )}
           </div>
         </>
       )}
-
-      <Divider />
-
-      {/* Email */}
-      <div className="space-y-1.5">
-        <label className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">
-          EMAIL — WE&apos;LL SEND YOUR RSVP CONFIRMATION HERE
-        </label>
-        <input
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="your@email.com"
-          className="w-full border border-[var(--color-primary)]/40 bg-transparent px-3 py-2 font-[family-name:var(--font-vt323)] text-sm tracking-wide text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
-        />
-      </div>
-
-      {/* Submit */}
-      <div className="space-y-2">
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full bg-[var(--color-primary)] text-[var(--color-bg)] py-3 font-[family-name:var(--font-vt323)] text-xl tracking-widest cursor-pointer disabled:opacity-50 transition-opacity"
-          style={{ boxShadow: '3px 3px 0 var(--color-accent)' }}
-        >
-          {saving ? 'SAVING…' : alreadyRsvped ? 'UPDATE RSVP' : 'SEND RSVP'}
-        </button>
-        {saved && (
-          <p className="crispy text-center font-[family-name:var(--font-playfair)] italic text-sm text-[var(--color-accent)]">
-            Thanks! We can&apos;t wait to see you. ✓
-          </p>
-        )}
-      </div>
 
     </form>
   )

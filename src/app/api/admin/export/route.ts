@@ -13,6 +13,14 @@ function esc(val: string | null | undefined | boolean): string {
   return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s
 }
 
+function roomsSummary(room_counts: Record<string, number> | null): string {
+  if (!room_counts) return ''
+  return Object.entries(room_counts)
+    .filter(([, n]) => n > 0)
+    .map(([type, n]) => `${type} x${n}`)
+    .join('; ')
+}
+
 export async function GET(request: NextRequest) {
   if (!isAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -26,18 +34,18 @@ export async function GET(request: NextRequest) {
 
   const headers = [
     'Invite', 'Password', 'Email', 'Phone', 'Address',
-    'Has Deer Park Room', 'Friday Invited', 'Notes',
+    'Rooms', 'Friday Invited', 'Notes',
     'Guest First Name', 'Guest Last Name',
-    'RSVP Submitted', 'Attending Sat', 'Attending Fri',
+    'RSVP Submitted', 'Attending Sat', 'Attending Fri', 'Attending Sun',
     'Dietary', 'Song Request', 'Message',
   ]
 
   type InviteRow = {
     display_name: string; password: string; email: string | null; phone: string | null
-    address: string | null; has_deer_park_room: boolean; friday_invited: boolean; notes: string | null
+    address: string | null; room_counts: Record<string, number> | null; friday_invited: boolean; notes: string | null
     guests: Array<{
       first_name: string; last_name: string; rsvp_submitted_at: string | null
-      attending_saturday: boolean | null; attending_friday: boolean | null
+      attending_saturday: boolean | null; attending_friday: boolean | null; attending_sunday: boolean | null
       dietary: string | null; song_request: string | null; message: string | null
     }>
   }
@@ -45,20 +53,21 @@ export async function GET(request: NextRequest) {
   const rows: string[] = [headers.join(',')]
 
   for (const inv of (data ?? []) as InviteRow[]) {
+    const rooms = roomsSummary(inv.room_counts)
     if (inv.guests.length === 0) {
       rows.push([
         esc(inv.display_name), esc(inv.password), esc(inv.email), esc(inv.phone),
-        esc(inv.address), esc(inv.has_deer_park_room), esc(inv.friday_invited), esc(inv.notes),
-        '', '', '', '', '', '', '', '',
+        esc(inv.address), esc(rooms), esc(inv.friday_invited), esc(inv.notes),
+        '', '', '', '', '', '', '', '', '',
       ].join(','))
     } else {
       for (const g of inv.guests) {
         rows.push([
           esc(inv.display_name), esc(inv.password), esc(inv.email), esc(inv.phone),
-          esc(inv.address), esc(inv.has_deer_park_room), esc(inv.friday_invited), esc(inv.notes),
+          esc(inv.address), esc(rooms), esc(inv.friday_invited), esc(inv.notes),
           esc(g.first_name), esc(g.last_name),
           esc(g.rsvp_submitted_at ? new Date(g.rsvp_submitted_at).toLocaleDateString('en-GB') : null),
-          esc(g.attending_saturday), esc(g.attending_friday),
+          esc(g.attending_saturday), esc(g.attending_friday), esc(g.attending_sunday),
           esc(g.dietary), esc(g.song_request), esc(g.message),
         ].join(','))
       }

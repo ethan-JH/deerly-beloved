@@ -12,6 +12,7 @@ interface Guest {
   rsvp_submitted_at: string | null
   attending_saturday: boolean | null
   attending_friday: boolean | null
+  attending_sunday: boolean | null
   dietary: string | null
   song_request: string | null
   message: string | null
@@ -37,6 +38,7 @@ type NewDraft = InviteFields & { guestNames: { first_name: string; last_name: st
 interface GuestRsvpDraft {
   attending_saturday: boolean
   attending_friday: boolean
+  attending_sunday: boolean
   dietary: string
   song_request: string
   message: string
@@ -213,7 +215,7 @@ export function AdminDashboard() {
   const [reminderSent, setReminderSent] = useState<string | null>(null)
   const [editingGuestId, setEditingGuestId]       = useState<string | null>(null)
   const [guestDraft, setGuestDraft]               = useState<GuestRsvpDraft>({
-    attending_saturday: false, attending_friday: false,
+    attending_saturday: false, attending_friday: false, attending_sunday: false,
     dietary: '', song_request: '', message: '', rsvp_submitted: false,
   })
   const [editingGuestNameId, setEditingGuestNameId] = useState<string | null>(null)
@@ -237,6 +239,7 @@ export function AdminDashboard() {
   const guestsOutstanding = allGuests.filter(g => !g.rsvp_submitted_at).length
   const attendingSat      = allGuests.filter(g => g.attending_saturday === true).length
   const attendingFri      = allGuests.filter(g => g.attending_friday === true).length
+  const attendingSun      = allGuests.filter(g => g.attending_sunday === true).length
   const mainHouseRooms    = invites.reduce((s, i) => s + (i.room_counts?.main_house_double ?? 0), 0)
   const gardenDblRooms    = invites.reduce((s, i) => s + (i.room_counts?.garden_double ?? 0), 0)
   const gardenSglRooms    = invites.reduce((s, i) => s + (i.room_counts?.garden_single ?? 0), 0)
@@ -334,6 +337,7 @@ export function AdminDashboard() {
     setGuestDraft({
       attending_saturday: g.attending_saturday ?? false,
       attending_friday:   g.attending_friday   ?? false,
+      attending_sunday:   g.attending_sunday   ?? false,
       dietary:            g.dietary            ?? '',
       song_request:       g.song_request       ?? '',
       message:            g.message            ?? '',
@@ -346,6 +350,7 @@ export function AdminDashboard() {
     const patch = {
       attending_saturday: guestDraft.attending_saturday,
       attending_friday:   guestDraft.attending_friday,
+      attending_sunday:   guestDraft.attending_sunday,
       dietary:            guestDraft.dietary      || null,
       song_request:       guestDraft.song_request || null,
       message:            guestDraft.message      || null,
@@ -395,6 +400,7 @@ export function AdminDashboard() {
         <StatCard label="RSVP'D"        value={`${guestsRsvped}/${totalGuests}`} />
         <StatCard label="SAT"           value={attendingSat} />
         <StatCard label="FRI"           value={attendingFri} />
+        <StatCard label="SUN"           value={attendingSun} />
         <StatCard label="MH DBL"        value={`${mainHouseRooms}/14`} />
         <StatCard label="GDN DBL"       value={`${gardenDblRooms}/14`} />
         <StatCard label="GDN SGL"       value={`${gardenSglRooms}/2`} />
@@ -623,7 +629,7 @@ export function AdminDashboard() {
                               {g.first_name} {g.last_name}
                             </div>
                             <div className="flex flex-wrap gap-4">
-                              {([ ['attending_saturday', 'SATURDAY'], ['attending_friday', 'FRIDAY'], ['rsvp_submitted', 'RSVP SUBMITTED'] ] as const).map(([field, label]) => (
+                              {([ ['attending_saturday', 'SATURDAY'], ['attending_friday', 'FRIDAY'], ['attending_sunday', 'SUNDAY'], ['rsvp_submitted', 'RSVP SUBMITTED'] ] as const).map(([field, label]) => (
                                 <label key={field} className="flex items-center gap-1.5 font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-text)] cursor-pointer select-none">
                                   <input type="checkbox"
                                     checked={guestDraft[field]}
@@ -672,6 +678,7 @@ export function AdminDashboard() {
                               <div className="flex flex-wrap gap-x-3 gap-y-0 font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)] flex-1">
                                 <span>SAT: <b className="text-[var(--color-text)]">{g.attending_saturday ? '✓' : '✗'}</b></span>
                                 <span>FRI: <b className="text-[var(--color-text)]">{g.attending_friday ? '✓' : '✗'}</b></span>
+                                <span>SUN: <b className="text-[var(--color-text)]">{g.attending_sunday ? '✓' : '✗'}</b></span>
                                 {g.dietary      && <span>🍽 <span className="text-[var(--color-accent)]">{g.dietary}</span></span>}
                                 {g.song_request && <span>🎵 {g.song_request}</span>}
                                 {g.message      && <span className="italic">"{g.message}"</span>}
