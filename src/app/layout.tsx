@@ -29,6 +29,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${vt323.variable} ${playfair.variable} h-full`}>
+      <head>
+        {/* Shave the handshake off the Travel window's embedded map */}
+        <link rel="preconnect" href="https://maps.google.com" />
+        <link rel="preconnect" href="https://maps.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body className="h-full font-[family-name:var(--font-vt323)]">
         {/* SVG filter definitions — grain texture for Playfair text */}
         <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">

@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   const { error: sendError } = await resend.emails.send({
-    from: 'Bechan & Ethan <noreply@eharbinson.com>',
+    from: 'Bechan & Ethan <donotreply@bechanandethan.wedding>',
+    replyTo: 'eharbinson966@gmail.com',
     to: email,
     subject: "Don't forget to RSVP — Bechan & Ethan, 12 June 2027",
     text: [

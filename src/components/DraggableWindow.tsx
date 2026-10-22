@@ -7,6 +7,7 @@ interface Position { x: number; y: number }
 interface DraggableWindowProps {
   id: string
   title: string
+  icon?: string
   children: ReactNode
   initialPosition: Position
   zIndex: number
@@ -18,6 +19,7 @@ interface DraggableWindowProps {
 
 export function DraggableWindow({
   title,
+  icon,
   children,
   initialPosition,
   zIndex,
@@ -100,8 +102,14 @@ export function DraggableWindow({
         >
           ×
         </button>
-        <span className="font-[family-name:var(--font-vt323)] text-[var(--color-text)] text-xl tracking-widest uppercase leading-none">
-          {title}
+        <span className="flex items-center gap-1.5">
+          {icon && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={icon} alt="" width={18} height={18} className="shrink-0 block" style={{ imageRendering: 'pixelated' }} />
+          )}
+          <span className="font-[family-name:var(--font-vt323)] text-[var(--color-text)] text-xl tracking-widest uppercase leading-none">
+            {title}
+          </span>
         </span>
       </div>
       <div className="min-h-0 overflow-hidden m-2 border border-[var(--color-text)]/20 rounded-md">

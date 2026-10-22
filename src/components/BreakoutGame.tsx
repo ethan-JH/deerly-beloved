@@ -23,7 +23,8 @@ const WIDEN_FACTOR = 1.5
 const SHRINK_FACTOR = 0.5
 const FLASH_MS = 150
 const MILESTONE_EVERY = 25
-const ITEM_R = 9
+const ITEM_SIZE = 30
+const ITEM_R = ITEM_SIZE / 2
 const FALL_SPEED = 2.2
 const SPAWN_MIN_MS = 1200
 const SPAWN_MAX_MS = 2500
@@ -33,11 +34,52 @@ const BAD_CATCH_PENALTY = 20
 const ROW_COLORS = ['#0D1F3C', '#0D1F3C', '#1760B0', '#1760B0', '#E07B5A', '#E07B5A', '#9A8898', '#9A8898']
 const RAISED = 'inset -2px -2px 0 rgba(23,96,176,0.45), inset 2px 2px 0 rgb(250,244,198)'
 const FIREWORK_COLORS = ['#E07B5A', '#1760B0', '#FAF4C6', '#9A8898', '#0D1F3C']
-const POWER_COLOR = '#E07B5A'
-const DEBUFF_COLOR = '#9A8898'
-const ITEM_ICONS: Record<ItemType, string> = { pierce: '🍸', widen: '🍉', shrink: '🥴' }
-const ITEM_COLORS: Record<ItemType, string> = { pierce: '#E07B5A', widen: '#1760B0', shrink: '#9A8898' }
+// Good/bad feedback colours, shared by the falling items, the score popups and
+// the paddle/ball tints so catching a green face and seeing green are the same signal
+const POWER_COLOR = '#5FCB6B'
+const DEBUFF_COLOR = '#D6453F'
 const ITEM_GOOD: Record<ItemType, boolean> = { pierce: true, widen: true, shrink: false }
+
+// 8x8 pixel sprites, drawn as blocks so they stay legible at any scale.
+// Good items are bright green, the bad one deep red. Hue alone isn't enough
+// (red/green is the worst pair for colourblind players) so the light/dark
+// contrast and the happy/sad face shapes carry the same message independently.
+const GLYPH_GRID = 8
+const ITEM_GLYPHS: Record<ItemType, string[]> = {
+  // Up arrow: the ball punching upward through the bricks
+  pierce: [
+    '...XX...',
+    '..XXXX..',
+    '.XXXXXX.',
+    'XXXXXXXX',
+    '...XX...',
+    '...XX...',
+    '...XX...',
+    '........',
+  ],
+  // Party face: sunglasses + big grin
+  widen: [
+    '........',
+    'XXX..XXX',
+    'XXX..XXX',
+    '........',
+    '........',
+    'X......X',
+    '.XXXXXX.',
+    '........',
+  ],
+  // Knocked-out face: X eyes + frown
+  shrink: [
+    'X.X..X.X',
+    '.X....X.',
+    'X.X..X.X',
+    '........',
+    '........',
+    '.XXXXXX.',
+    'X......X',
+    '........',
+  ],
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface GuestMember {
@@ -166,35 +208,48 @@ function drawBricks(ctx: CanvasRenderingContext2D, bricks: boolean[][]) {
       if (bricks[row][col]) drawBrick(ctx, col, row)
 }
 
-function drawFallingItems(ctx: CanvasRenderingContext2D, items: FallingItem[]) {
+function drawFallingItems(ctx: CanvasRenderingContext2D, items: FallingItem[], now: number) {
+  const S = ITEM_SIZE
   for (const item of items) {
     const good = ITEM_GOOD[item.type]
-    // Soft glow ring — warm pulse for good, dim for bad — readable before you even register the icon
-    ctx.beginPath()
-    ctx.arc(item.x, item.y, ITEM_R + 3, 0, Math.PI * 2)
-    ctx.strokeStyle = good ? 'rgba(224,123,90,0.55)' : 'rgba(13,31,60,0.55)'
-    ctx.lineWidth = 2; ctx.stroke()
+    const x = Math.round(item.x - S / 2)
+    const y = Math.round(item.y - S / 2)
 
-    ctx.beginPath()
-    ctx.arc(item.x, item.y, ITEM_R, 0, Math.PI * 2)
-    ctx.fillStyle = ITEM_COLORS[item.type]
-    ctx.fill()
-    ctx.strokeStyle = '#FAF4C6'; ctx.lineWidth = 1; ctx.stroke()
-    ctx.font = `${Math.floor(ITEM_R * 1.3)}px sans-serif`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(ITEM_ICONS[item.type], item.x, item.y + 1)
+    // Good items pulse; the bad one sits dull and static
+    const pulse = good && Math.floor(now / 150) % 2 === 0
+    const body = good ? (pulse ? '#86E492' : '#5FCB6B') : '#A3302C'
+    const bevelLight = good ? '#B4F0BC' : '#C4524C'
+    const bevelDark = good ? '#2E7D3A' : '#4A1210'
+    const glyphColor = good ? '#0D1F3C' : '#FFE2DF'
 
-    // +/- badge — unambiguous even if color/icon don't read at this size
-    const bx = item.x + ITEM_R * 0.68, by = item.y - ITEM_R * 0.68
-    ctx.beginPath()
-    ctx.arc(bx, by, 5, 0, Math.PI * 2)
-    ctx.fillStyle = good ? '#1760B0' : '#0D1F3C'
-    ctx.fill()
-    ctx.strokeStyle = '#FAF4C6'; ctx.lineWidth = 0.75; ctx.stroke()
-    ctx.font = 'bold 8px sans-serif'
-    ctx.fillStyle = '#FAF4C6'
-    ctx.fillText(good ? '+' : '−', bx, by + 0.5)
+    // Hard outline so it stands out against any photo behind it
+    ctx.fillStyle = '#0D1F3C'
+    ctx.fillRect(x - 2, y - 2, S + 4, S + 4)
+    ctx.fillStyle = good ? '#FAF4C6' : '#F0C9C6'
+    ctx.fillRect(x - 1, y - 1, S + 2, S + 2)
+
+    // Body + chunky bevel, same language as the bricks
+    ctx.fillStyle = body
+    ctx.fillRect(x, y, S, S)
+    ctx.fillStyle = bevelLight
+    ctx.fillRect(x, y, S, 3)
+    ctx.fillRect(x, y, 3, S)
+    ctx.fillStyle = bevelDark
+    ctx.fillRect(x, y + S - 3, S, 3)
+    ctx.fillRect(x + S - 3, y, 3, S)
+
+    // 8x8 pixel sprite
+    const glyph = ITEM_GLYPHS[item.type]
+    const px = 3
+    const gx = x + (S - GLYPH_GRID * px) / 2
+    const gy = y + (S - GLYPH_GRID * px) / 2
+    ctx.fillStyle = glyphColor
+    for (let r = 0; r < GLYPH_GRID; r++) {
+      const row = glyph[r]
+      for (let c = 0; c < GLYPH_GRID; c++) {
+        if (row[c] === 'X') ctx.fillRect(gx + c * px, gy + r * px, px, px)
+      }
+    }
   }
 }
 
@@ -487,7 +542,7 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
       ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, W, H)
       if (imgRef.current?.complete) drawPhotoCover(ctx, imgRef.current)
       drawBricks(ctx, s.bricks)
-      drawFallingItems(ctx, s.fallingItems)
+      drawFallingItems(ctx, s.fallingItems, now)
       ctx.fillStyle = now < s.paddleEffectUntil ? (s.paddleW > PADDLE_W ? POWER_COLOR : DEBUFF_COLOR) : '#FAF4C6'
       ctx.fillRect(s.px, PADDLE_Y, s.paddleW, PADDLE_H)
       ctx.strokeStyle = '#0D1F3C'; ctx.lineWidth = 1.5; ctx.strokeRect(s.px, PADDLE_Y, s.paddleW, PADDLE_H)

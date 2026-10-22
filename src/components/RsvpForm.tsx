@@ -200,8 +200,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
           Broadhembury is near and dear to Bechan and the Thomas family, where they spent almost every school holiday
           throughout Bechan&apos;s childhood. It&apos;s very special for us to be getting (legally) married there, and we thought it
           would be lovely to extend the invite to everyone. With that said, there&apos;s absolutely no pressure to come down for the
-          Friday if you can&apos;t make it or don&apos;t fancy it. We know even getting up for 1 day of a wedding is a big ask, so
-          don&apos;t worry at all if you can only do the Saturday. We can&apos;t offer you accommodation for the Friday but we are
+          Friday if you can&apos;t make it or don&apos;t fancy it. We can&apos;t offer you accommodation for the Friday but we are
           booking out the Drewe Arms for dinner and drinks after the church ceremony. The Drewe Arms is not only a 30 second
           walk away from the church, but our panel of incredibly biased judges do regard it as the best pub in Devon, and
           possibly the World.

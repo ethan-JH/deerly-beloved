@@ -94,6 +94,10 @@ function getWidth(id: string): number {
   return id === 'home' ? 560 : id === 'secret' ? 440 : 480
 }
 
+// Photos shown inside windows. Fetched up front so they're already decoded by the
+// time a window is opened, rather than popping in a beat later.
+const WINDOW_PHOTOS = ['/photos/88.jpg', '/photos/89.jpg', '/photos/90.jpg', '/photos/91.jpg']
+
 // Fixed positions/delays avoid SSR hydration mismatch from Math.random()
 const CONFETTI_PIECES = [
   { left: '5%',  delay: '-0.2s', color: '#E07B5A', size: 8  },
@@ -144,60 +148,96 @@ function TopBar({ clock, invite }: { clock: string | null; invite: InviteData | 
   )
 }
 
+function StayCard({
+  name, price, tag, query, children,
+}: {
+  name: string; price: string; tag: string; query: string; children: React.ReactNode
+}) {
+  return (
+    <div
+      className="mb-3 rounded-md overflow-hidden border border-[var(--color-text)]/15"
+      style={{ boxShadow: '2px 2px 0 rgba(13,31,60,0.08)' }}
+    >
+      <div className="flex items-center justify-between gap-2 bg-[var(--color-chrome)] px-3 py-1.5">
+        <span className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-text)] min-w-0 truncate">
+          {name}
+        </span>
+        <span className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[var(--color-accent)] shrink-0">
+          {price}
+        </span>
+      </div>
+      <div className="px-3 py-2.5">
+        <span className="font-[family-name:var(--font-vt323)] text-[11px] tracking-widest text-[var(--color-muted)]">
+          {tag.toUpperCase()}
+        </span>
+        <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mt-1 mb-2">
+          {children}
+        </p>
+        <MapLink query={query} label="VIEW ON MAP" />
+      </div>
+    </div>
+  )
+}
+
 function AlternativeAccommodation() {
   return (
     <>
-      <div className="mb-4">
-        <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
-          The Pig at Combe
-        </p>
-        <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
-          The boujee option, and a very short drive from Deer Park. Beautiful grounds and a fantastic restaurant,
-          worth the splurge. Note they require a minimum 2-night stay on weekends, so book early.
+      <StayCard
+        name="The Pig at Combe"
+        price="£££"
+        tag="The splurge"
+        query="The Pig at Combe, Gittisham, Honiton"
+      >
+        The boujee option, and a very short drive from Deer Park. Beautiful grounds and a fantastic restaurant,
+        worth the splurge. Note they require a minimum 2-night stay on weekends, so book early.
+      </StayCard>
+
+      <StayCard
+        name="The Tumbling Weir Hotel"
+        price="££"
+        tag="In town"
+        query="The Tumbling Weir Hotel, Ottery St Mary"
+      >
+        A comfortable, mid-range option with a restaurant attached.
+      </StayCard>
+
+      <StayCard
+        name="Premier Inn Honiton"
+        price="£"
+        tag="Cheap and cheerful"
+        query="Premier Inn Honiton"
+      >
+        Reliable, no-frills, and right in Honiton. The safe bet if you just need a bed and a shower.
+      </StayCard>
+
+      <StayCard
+        name="Buckley Farmhouse"
+        price="££"
+        tag="Country B&B"
+        query="Buckley Farmhouse, Devon"
+      >
+        A charming farmhouse B&amp;B with excellent reviews, a little further out.
+      </StayCard>
+
+      <StayCard
+        name="The White Hart Inn"
+        price="££"
+        tag="Village inn"
+        query="The White Hart Inn, Wilmington, Honiton"
+      >
+        A cosy village inn a short drive away, in Wilmington.
+      </StayCard>
+
+      <div className="mt-4 px-3 py-2.5 border-l-4 rounded-r-md" style={{ borderColor: 'var(--color-primary)', background: 'rgba(23,96,176,0.06)' }}>
+        <span className="font-[family-name:var(--font-vt323)] text-[11px] tracking-widest text-[var(--color-primary)]">
+          ALSO WORTH A LOOK
+        </span>
+        <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mt-1">
+          There are plenty of Airbnbs dotted around the area if you&apos;d prefer somewhere more independent,
+          and if you&apos;d rather stay somewhere bigger, Exeter and Taunton are the nearest larger towns with a
+          wider range of places to stay.
         </p>
       </div>
-
-      <div className="mb-4">
-        <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
-          The Tumbling Weir Hotel &amp; Restaurant
-        </p>
-        <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
-          A comfortable, budget-friendly option right in Honiton.
-        </p>
-      </div>
-
-      <div className="mb-4">
-        <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
-          Premier Inn Honiton
-        </p>
-        <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
-          The cheap and cheerful option, reliable, no-frills, and right in Honiton.
-        </p>
-      </div>
-
-      <div className="mb-4">
-        <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
-          Buckley Farmhouse
-        </p>
-        <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
-          A charming farmhouse B&amp;B with excellent reviews, a little further out.
-        </p>
-      </div>
-
-      <div className="mb-5">
-        <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
-          The White Hart Inn, Wilmington
-        </p>
-        <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
-          A cosy village inn a short drive away.
-        </p>
-      </div>
-
-      <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed">
-        There are also plenty of Airbnbs dotted around the area if you&apos;d prefer somewhere more independent,
-        worth a search if the above don&apos;t take your fancy. If you&apos;d rather stay somewhere bigger, Exeter and
-        Taunton are the nearest larger towns with a wider range of accommodation.
-      </p>
     </>
   )
 }
@@ -242,6 +282,7 @@ function FaqItem({ q, a }: { q: string; a: React.ReactNode }) {
 }
 
 function EmbeddedMap({ query, label }: { query: string; label: string }) {
+  const [loaded, setLoaded] = useState(false)
   return (
     <div
       className="mb-2 rounded-lg overflow-hidden border-2 border-[var(--color-chrome)]"
@@ -252,13 +293,26 @@ function EmbeddedMap({ query, label }: { query: string; label: string }) {
           📍 {label}
         </span>
       </div>
-      <div className="overflow-hidden" style={{ aspectRatio: '16/9' }}>
+      <div className="relative overflow-hidden bg-[var(--color-chrome)]" style={{ aspectRatio: '16/9' }}>
+        {!loaded && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[var(--color-muted)] animate-pulse">
+              LOADING MAP...
+            </span>
+          </div>
+        )}
         <iframe
           src={`https://maps.google.com/maps?q=${encodeURIComponent(query)}&output=embed`}
-          className="w-full h-full"
-          style={{ border: 0, filter: 'sepia(0.25) saturate(0.85) hue-rotate(-6deg) contrast(1.05)' }}
+          className="w-full h-full relative"
+          style={{
+            border: 0,
+            filter: 'sepia(0.25) saturate(0.85) hue-rotate(-6deg) contrast(1.05)',
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity 250ms ease',
+          }}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
+          onLoad={() => setLoaded(true)}
           title={`Map of ${query}`}
         />
       </div>
@@ -393,20 +447,47 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
       return assignedRooms.length > 0 ? (
         <div className="p-8">
           <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">Accommodation</h2>
-          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] mb-4 leading-relaxed">
-            Congrats! We've already reserved a room for you in Deer Park on the night of Saturday 12th June 2027. Details are below:
-          </p>
-          {assignedRooms.map((r, i) => (
-            <div key={i} className="mb-3">
-              <p className="crispy font-[family-name:var(--font-playfair)] text-xl text-[var(--color-text)] mb-0.5">
-                {r.label}{r.count > 1 ? ` × ${r.count}` : ''}
-              </p>
-              <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)]">
-                {r.price}
-              </p>
+
+          {/* Reserved room, framed as its own little keepsake card */}
+          <div
+            className="rounded-lg overflow-hidden border-2 border-[var(--color-accent)] mb-4"
+            style={{ boxShadow: '3px 3px 0 rgba(224,123,90,0.25)' }}
+          >
+            <div className="relative" style={{ aspectRatio: '16/9' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/photos/89.jpg"
+                alt="Deer Park Country House"
+                className="w-full h-full object-cover"
+                style={{ imageRendering: 'pixelated' }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(13,31,60,0.55)' }}>
+                <span className="font-[family-name:var(--font-vt323)] text-xl tracking-[0.2em] text-[var(--color-bg)] text-center px-4">
+                  RESERVED FOR YOU
+                </span>
+              </div>
             </div>
-          ))}
-          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] leading-relaxed mt-4 mb-4">
+            <div className="px-4 py-3 bg-[var(--color-surface)]">
+              <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed mb-3">
+                Congrats! We&apos;ve already reserved a room for you at Deer Park on the night of Saturday 12th June 2027.
+              </p>
+              {assignedRooms.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex items-baseline justify-between gap-3 py-1.5 border-t border-[var(--color-text)]/10"
+                >
+                  <span className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-text)]">
+                    {r.label}{r.count > 1 ? ` × ${r.count}` : ''}
+                  </span>
+                  <span className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[var(--color-accent)] shrink-0">
+                    {r.price.toUpperCase()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed mb-5">
             {hasDouble && hasSingle ? (
               <>Your rooms are available at the nightly rate of £150.00 (to include breakfast) for the double, and
               £75.00 (to include breakfast) for the single. </>
@@ -417,15 +498,19 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
             ) : null}
             The room is yours if you&apos;d like it, just confirm via your RSVP.
           </p>
-          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] leading-relaxed mb-5">
-            If you&apos;d rather stay elsewhere, here are a few other options nearby:
+
+          <h3 className="font-[family-name:var(--font-vt323)] text-xl tracking-widest text-[var(--color-primary)] mb-1">
+            Prefer to stay elsewhere?
+          </h3>
+          <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mb-4">
+            No problem at all. A few other options nearby:
           </p>
           <AlternativeAccommodation />
         </div>
       ) : (
         <div className="p-8">
           <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">Places to Stay</h2>
-          <p className="crispy font-[family-name:var(--font-playfair)] text-lg text-[var(--color-muted)] mb-5 leading-relaxed">
+          <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] mb-5 leading-relaxed">
             We don&apos;t have a room booked for you at Deer Park, but there&apos;s plenty of lovely accommodation
             nearby in and around Honiton. Here are a few options to get you started.
           </p>
@@ -514,10 +599,52 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
               I&apos;m coming from anywhere else on Planet Earth
             </h3>
             <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
-              We have a few guests representing team USA, but from anyone coming from the wider world
+              We have a few guests representing team USA, plus others coming from the wider world.
               We reckon you&apos;ll be getting a flight to London. Then you can just get a train from London Paddington to
               Tiverton Parkway and taxi the rest of the way as per the Londoner advice above.
             </p>
+          </div>
+
+          <div className="mt-5">
+            <h3 className="font-[family-name:var(--font-vt323)] text-xl tracking-widest text-[var(--color-primary)] mb-1">
+              Local taxis
+            </h3>
+            <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mb-3">
+              Deer Park is out in the countryside, so you&apos;ll want a taxi booked in advance rather than hoping one
+              turns up. Book early for the Saturday night, as local firms get hammered on wedding weekends. We normally
+              use Sparkys.
+            </p>
+            <div className="border border-[var(--color-text)]/15 rounded-md overflow-hidden">
+              {[
+                { name: 'Sparkys Taxis', tel: '01404 47670', note: 'Honiton. The one we use.' },
+                { name: 'Millstream Taxis', tel: '01404 45825', note: 'Honiton' },
+                { name: 'Regency Cars', tel: '01404 549300', note: 'Honiton Business Park' },
+                { name: 'Zodiac Cars', tel: '01404 41484', note: 'Honiton' },
+                { name: 'Blackdown Cars', tel: '01404 892888', note: 'Blackdown Hills' },
+                { name: 'Aquarius Taxis', tel: '07882 002028', note: 'Covers wider East Devon' },
+                { name: 'Otter Cabs', tel: '01404 812471', note: 'Ottery St Mary' },
+              ].map((t, i) => (
+                <div
+                  key={t.name}
+                  className={`flex items-baseline justify-between gap-3 px-3 py-2 ${i === 0 ? 'bg-[var(--color-accent)]/10' : ''} ${i > 0 ? 'border-t border-[var(--color-text)]/10' : ''}`}
+                >
+                  <span className="min-w-0">
+                    <span className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-text)]">
+                      {t.name}
+                    </span>
+                    <span className="block font-[family-name:var(--font-vt323)] text-[11px] tracking-widest text-[var(--color-muted)]">
+                      {t.note.toUpperCase()}
+                    </span>
+                  </span>
+                  <a
+                    href={`tel:${t.tel.replace(/\s/g, '')}`}
+                    className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[var(--color-primary)] underline underline-offset-2 shrink-0"
+                  >
+                    {t.tel}
+                  </a>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )
@@ -528,8 +655,7 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
 
           <FaqItem
             q="What's the dress code?"
-            a={<>The short answer is Summer suits and dresses, but no strict dress code. Colour and/or flair is strongly
-              encouraged! For most of you, Bechan (and occasionally Ethan) has almost certainly turned up to one of your
+            a={<>The short answer is Summer suits &amp; dresses with a &ldquo;funky formal&rdquo; theme. For most of you, Bechan (and occasionally Ethan) has almost certainly turned up to one of your
               events wearing something completely ridiculous, but normally pretty cool, so take this as your opportunity
               to return the favour. Get those crazy colours or patterns out that you&apos;ve never had the right occasion
               for otherwise. Bonus points to the men attending for coloured suits, funky ties or cravats.</>}
@@ -550,12 +676,27 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
           />
 
           <FaqItem
+            q="Can I buy you a present?"
+            a={<>Of course the correct thing to do is to say your presence is gift enough, blah blah. But we love stuff
+              too much, so yes please to any prezzies! We&apos;ll post a link to our gift registry here when we finally
+              get our act together and make one.</>}
+          />
+
+          <FaqItem
+            q="What shoes should I wear?"
+            a={<>Bechan will be wearing the most ridiculous high heels ever conceived by mankind, but naturally as
+              it&apos;s the Devon countryside, flat solid ground is by no means a guarantee. We&apos;d recommend taking
+              a pair of flats as a back up for the wobbly bits.</>}
+          />
+
+          <FaqItem
             q="Can I take my kids?"
             a={<>Apologies to be a pain, but we&apos;re going adults only for this one. If you&apos;re able to wrangle
               grandparents or babysitters, we hope that allows you to relinquish all responsibility and maturity and
               properly let your hair down.</>}
           />
 
+          {/* Keep the two website questions last — they're an easter egg for anyone who scrolls this far */}
           <FaqItem
             q="Who made the website?"
             a={<>Ethan being a weird computer guy, this was the main thing he could actually have a creative input on.
@@ -622,6 +763,12 @@ export default function DesktopPage() {
         setInvite(data)
       })
       .catch(() => {})
+  }, [])
+
+  // Warm the cache for in-window photos and taskbar icons while the loading screen runs
+  useEffect(() => {
+    const srcs = [...WINDOW_PHOTOS, ...WINDOWS_CONFIG.map((w) => w.icon)]
+    srcs.forEach((src) => { const img = new Image(); img.src = src })
   }, [])
 
   useEffect(() => {
@@ -696,6 +843,7 @@ export default function DesktopPage() {
                   key={w.id}
                   id={w.id}
                   title={w.title}
+                  icon={w.icon}
                   initialPosition={w.spawnPosition}
                   zIndex={w.zIndex}
                   onClose={() => closeWindow(w.id)}
