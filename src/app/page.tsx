@@ -716,11 +716,9 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
               {[
                 { name: 'Sparkys Taxis', tel: '01404 47670', note: 'Honiton. The one we use.' },
                 { name: 'Millstream Taxis', tel: '01404 45825', note: 'Honiton' },
+                { name: 'Hello Taxis', tel: '07535 554441', note: 'Honiton High Street' },
                 { name: 'Regency Cars', tel: '01404 549300', note: 'Honiton Business Park' },
-                { name: 'Zodiac Cars', tel: '01404 41484', note: 'Honiton' },
-                { name: 'Blackdown Cars', tel: '01404 892888', note: 'Blackdown Hills' },
                 { name: 'Aquarius Taxis', tel: '07882 002028', note: 'Covers wider East Devon' },
-                { name: 'Otter Cabs', tel: '01404 812471', note: 'Ottery St Mary' },
               ].map((t, i) => (
                 <div
                   key={t.name}
@@ -785,6 +783,13 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
             a={<>Bechan will be wearing the most ridiculous high heels ever conceived by mankind, but naturally as
               it&apos;s the Devon countryside, flat solid ground is by no means a guarantee. We&apos;d recommend taking
               a pair of flats as a back up for the wobbly bits.</>}
+          />
+
+          <FaqItem
+            q="Can I park my car?"
+            a={<>Deer Park has plenty of onsite parking so should be all good for the Saturday. For the Friday and
+              Sunday, if you&apos;re coming to Broadhembury, the main square has a decent amount of parking but you may
+              have to leave your car slightly up the road if that fills up.</>}
           />
 
           <FaqItem

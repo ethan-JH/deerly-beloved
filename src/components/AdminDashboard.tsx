@@ -101,9 +101,18 @@ function RoomBreakdown({ mh, gd, gs, th }: { mh: number; gd: number; gs: number;
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex-1 border border-[var(--color-text)]/10 py-3 px-2 text-center min-w-0">
-      <div className="font-[family-name:var(--font-vt323)] text-2xl md:text-3xl text-[var(--color-primary)] leading-none">{value}</div>
-      <div className="font-[family-name:var(--font-vt323)] text-[10px] md:text-xs tracking-widest text-[var(--color-muted)] mt-0.5">{label}</div>
+    <div className="border border-[var(--color-text)]/10 py-2.5 px-1 text-center min-w-0">
+      <div className="font-[family-name:var(--font-vt323)] text-xl md:text-3xl text-[var(--color-primary)] leading-none truncate">{value}</div>
+      <div className="font-[family-name:var(--font-vt323)] text-[10px] md:text-xs tracking-widest text-[var(--color-muted)] mt-0.5 truncate">{label}</div>
+    </div>
+  )
+}
+
+function StatGroup({ title, cols, children }: { title: string; cols: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="font-[family-name:var(--font-vt323)] text-[10px] tracking-widest text-[var(--color-muted)] mb-1">{title}</div>
+      <div className={`grid gap-1.5 ${cols}`}>{children}</div>
     </div>
   )
 }
@@ -127,10 +136,11 @@ function InviteForm({
   onRemoveGuestRow?: (i: number) => void
   showGuests: boolean
 }) {
-  const inp = 'border border-[var(--color-primary)]/40 bg-transparent px-2 py-1 font-[family-name:var(--font-vt323)] text-sm tracking-wide text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] w-full'
+  // text-base on mobile stops iOS zooming the viewport when a field is focused
+  const inp = 'border border-[var(--color-primary)]/40 bg-transparent px-2 py-2 font-[family-name:var(--font-vt323)] text-base sm:text-sm tracking-wide text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] w-full'
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <input className={inp} placeholder="Display name *" value={draft.display_name}
           onChange={e => onChange({ display_name: e.target.value })} />
         <input className={inp} placeholder="Password *" value={draft.password}
@@ -146,22 +156,24 @@ function InviteForm({
         onChange={e => onChange({ notes: e.target.value || null })} />
       <div className="space-y-1">
         <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">ROOMS</div>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
           {(Object.entries(ROOM_TYPES) as [RoomType, typeof ROOM_TYPES[RoomType]][]).map(([type, info]) => {
             const count = ((draft.room_counts ?? {}) as Record<string, number>)[type] ?? 0
             return (
-              <div key={type} className="flex items-center gap-2">
-                <span className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)] w-20 shrink-0">
+              <div key={type} className="flex items-center gap-2 py-0.5">
+                <span className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)] flex-1 sm:flex-none sm:w-20">
                   {info.shortLabel}
                 </span>
                 <button type="button" disabled={count === 0}
-                  className="font-[family-name:var(--font-vt323)] text-base px-1.5 leading-none cursor-pointer text-[var(--color-primary)] disabled:opacity-30"
+                  className="font-[family-name:var(--font-vt323)] text-lg px-3 py-1 leading-none cursor-pointer text-[var(--color-primary)] disabled:opacity-30"
+                  style={{ boxShadow: RAISED }}
                   onClick={() => onChange({ room_counts: { ...(draft.room_counts as Record<string, number>), [type]: count - 1 } })}>
                   −
                 </button>
-                <span className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-text)] w-4 text-center tabular-nums">{count}</span>
+                <span className="font-[family-name:var(--font-vt323)] text-base text-[var(--color-text)] w-5 text-center tabular-nums">{count}</span>
                 <button type="button"
-                  className="font-[family-name:var(--font-vt323)] text-base px-1.5 leading-none cursor-pointer text-[var(--color-primary)]"
+                  className="font-[family-name:var(--font-vt323)] text-lg px-3 py-1 leading-none cursor-pointer text-[var(--color-primary)]"
+                  style={{ boxShadow: RAISED }}
                   onClick={() => onChange({ room_counts: { ...(draft.room_counts as Record<string, number>), [type]: count + 1 } })}>
                   +
                 </button>
@@ -379,9 +391,10 @@ export function AdminDashboard() {
     : invites
 
   // ── Shared styles ─────────────────────────────────────────────────────────
-  const btn    = 'font-[family-name:var(--font-vt323)] text-xs tracking-widest px-2 py-0.5 cursor-pointer text-[var(--color-primary)]'
-  const danger = 'font-[family-name:var(--font-vt323)] text-xs tracking-widest px-2 py-0.5 cursor-pointer text-[#E07B5A]'
-  const inpSm  = 'border border-[var(--color-primary)]/40 bg-transparent px-2 py-1 font-[family-name:var(--font-vt323)] text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]'
+  // Padding sized for thumbs, not mice — these are tapped on a phone constantly
+  const btn    = 'font-[family-name:var(--font-vt323)] text-xs tracking-widest px-3 py-1.5 cursor-pointer text-[var(--color-primary)]'
+  const danger = 'font-[family-name:var(--font-vt323)] text-xs tracking-widest px-3 py-1.5 cursor-pointer text-[#E07B5A]'
+  const inpSm  = 'border border-[var(--color-primary)]/40 bg-transparent px-2 py-1.5 font-[family-name:var(--font-vt323)] text-base sm:text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]'
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -394,45 +407,49 @@ export function AdminDashboard() {
   return (
     <div className="p-4 md:p-6 space-y-4">
 
-      {/* Stats strip */}
-      <div className="flex gap-1.5 flex-wrap">
-        <StatCard label="GUESTS"        value={totalGuests} />
-        <StatCard label="RSVP'D"        value={`${guestsRsvped}/${totalGuests}`} />
-        <StatCard label="SAT"           value={attendingSat} />
-        <StatCard label="FRI"           value={attendingFri} />
-        <StatCard label="SUN"           value={attendingSun} />
-        <StatCard label="MH DBL"        value={`${mainHouseRooms}/14`} />
-        <StatCard label="GDN DBL"       value={`${gardenDblRooms}/14`} />
-        <StatCard label="GDN SGL"       value={`${gardenSglRooms}/2`} />
-        <StatCard label="TREEHOUSE"     value={`${treehouseRooms}/1`} />
-        <StatCard label="INVITES"       value={totalInvites} />
+      {/* Stats — grouped so they stay readable at phone width instead of squashing */}
+      <div className="space-y-3">
+        <StatGroup title="PEOPLE" cols="grid-cols-3 md:grid-cols-6">
+          <StatCard label="GUESTS"    value={totalGuests} />
+          <StatCard label="RSVP'D"    value={`${guestsRsvped}/${totalGuests}`} />
+          <StatCard label="INVITES"   value={totalInvites} />
+          <StatCard label="SAT"       value={attendingSat} />
+          <StatCard label="FRI"       value={attendingFri} />
+          <StatCard label="SUN"       value={attendingSun} />
+        </StatGroup>
+        <StatGroup title="ROOMS" cols="grid-cols-2 md:grid-cols-4">
+          <StatCard label="MH DBL"    value={`${mainHouseRooms}/14`} />
+          <StatCard label="GDN DBL"   value={`${gardenDblRooms}/14`} />
+          <StatCard label="GDN SGL"   value={`${gardenSglRooms}/2`} />
+          <StatCard label="TREEHOUSE" value={`${treehouseRooms}/1`} />
+        </StatGroup>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex flex-wrap gap-2 items-center justify-between">
-        <button
-          onClick={() => setShowNew(v => !v)}
-          className="font-[family-name:var(--font-vt323)] text-sm px-3 py-1 tracking-widest text-[var(--color-primary)] cursor-pointer"
-          style={{ background: 'var(--color-surface)', boxShadow: RAISED }}
-        >
-          {showNew ? '✕ CANCEL' : '+ NEW INVITE'}
-        </button>
+      {/* Toolbar — search first, it's the thing you reach for on a phone */}
+      <div className="space-y-2">
         <input
-          className="border border-[var(--color-primary)]/40 bg-transparent px-2 py-1 font-[family-name:var(--font-vt323)] text-sm tracking-wide text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] flex-1 min-w-[160px] max-w-xs"
+          className="w-full border border-[var(--color-primary)]/40 bg-transparent px-3 py-2 font-[family-name:var(--font-vt323)] text-base tracking-wide text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
           placeholder="SEARCH GUESTS..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setShowNew(v => !v)}
+            className="font-[family-name:var(--font-vt323)] text-sm px-3 py-2 tracking-widest text-[var(--color-primary)] cursor-pointer"
+            style={{ background: 'var(--color-surface)', boxShadow: RAISED }}
+          >
+            {showNew ? '✕ CANCEL' : '+ NEW INVITE'}
+          </button>
           <button
             onClick={() => setShowDietary(v => !v)}
-            className="font-[family-name:var(--font-vt323)] text-xs px-2 py-0.5 tracking-widest text-[var(--color-muted)] cursor-pointer border border-[var(--color-text)]/15"
+            className="font-[family-name:var(--font-vt323)] text-sm px-3 py-2 tracking-widest text-[var(--color-muted)] cursor-pointer border border-[var(--color-text)]/15"
           >
             {showDietary ? 'HIDE DIETARY' : `DIETARY (${dietaryGuests.length})`}
           </button>
           <a
             href="/api/admin/export"
-            className="font-[family-name:var(--font-vt323)] text-sm px-3 py-1 tracking-widest text-[var(--color-primary)] cursor-pointer"
+            className="font-[family-name:var(--font-vt323)] text-sm px-3 py-2 tracking-widest text-[var(--color-primary)] cursor-pointer"
             style={{ background: 'var(--color-surface)', boxShadow: RAISED }}
           >
             EXPORT CSV ↓
@@ -526,48 +543,55 @@ export function AdminDashboard() {
           // ── Normal row ───────────────────────────────────────────────────
           return (
             <div key={invite.id}>
-              {/* Collapsed header */}
-              <div className={`flex items-center gap-2 px-3 py-2.5 flex-wrap ${Object.values(invite.room_counts ?? {}).some(n => n > 0) ? 'bg-[#FAF4C6]/60 hover:bg-[#FAF4C6]/80' : 'hover:bg-[var(--color-chrome)]/20'}`}>
-                <button
-                  className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-muted)] w-4 shrink-0 cursor-pointer"
-                  onClick={() => setExpandedId(isExpanded ? null : invite.id)}
-                >
-                  {isExpanded ? '▼' : '►'}
-                </button>
-
-                <span className="font-[family-name:var(--font-vt323)] text-sm tracking-wide text-[var(--color-text)] flex-1 min-w-[100px] truncate">
-                  {invite.display_name}
-                </span>
-
-                <button
-                  title="Click to copy password"
-                  onClick={() => copyPassword(invite)}
-                  className="font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)] hover:text-[var(--color-primary)] cursor-pointer shrink-0 tracking-widest"
-                >
-                  {copiedId === invite.id ? '✓ COPIED' : `🔑 ${invite.password}`}
-                </button>
-
-                {invite.email && (
-                  <span className="font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)] truncate max-w-[160px] hidden lg:block">
-                    {invite.email}
+              {/* Collapsed header — stacks on phones, single row from md up */}
+              <div className={`px-3 py-2.5 ${Object.values(invite.room_counts ?? {}).some(n => n > 0) ? 'bg-[#FAF4C6]/60 hover:bg-[#FAF4C6]/80' : 'hover:bg-[var(--color-chrome)]/20'}`}>
+                {/* Name + status */}
+                <div className="flex items-center gap-2">
+                  <button
+                    className="font-[family-name:var(--font-vt323)] text-base text-[var(--color-muted)] w-5 shrink-0 cursor-pointer text-left"
+                    onClick={() => setExpandedId(isExpanded ? null : invite.id)}
+                    aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                  >
+                    {isExpanded ? '▼' : '►'}
+                  </button>
+                  <span className="font-[family-name:var(--font-vt323)] text-base tracking-wide text-[var(--color-text)] flex-1 min-w-0 truncate">
+                    {invite.display_name}
                   </span>
-                )}
+                  <RsvpBadge status={status} />
+                </div>
 
-                <span className="font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)] shrink-0">
-                  {invite.guests.length}p
-                </span>
+                {/* Meta line */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 pl-7">
+                  <button
+                    title="Tap to copy password"
+                    onClick={() => copyPassword(invite)}
+                    className="font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)] hover:text-[var(--color-primary)] cursor-pointer tracking-widest"
+                  >
+                    {copiedId === invite.id ? '✓ COPIED' : `🔑 ${invite.password}`}
+                  </button>
 
-                {(Object.entries(invite.room_counts ?? {}) as [RoomType, number][])
-                  .filter(([, n]) => n > 0)
-                  .map(([type, n]) => (
-                    <span key={type} className="font-[family-name:var(--font-vt323)] text-xs tracking-widest shrink-0" style={{ color: '#1760B0' }}>
-                      🏠 {ROOM_TYPES[type]?.shortLabel ?? type}{n > 1 ? ` ×${n}` : ''}
+                  <span className="font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)]">
+                    {invite.guests.length}p
+                  </span>
+
+                  {(Object.entries(invite.room_counts ?? {}) as [RoomType, number][])
+                    .filter(([, n]) => n > 0)
+                    .map(([type, n]) => (
+                      <span key={type} className="font-[family-name:var(--font-vt323)] text-xs tracking-widest" style={{ color: '#1760B0' }}>
+                        🏠 {ROOM_TYPES[type]?.shortLabel ?? type}{n > 1 ? ` ×${n}` : ''}
+                      </span>
+                    ))
+                  }
+
+                  {invite.email && (
+                    <span className="font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)] truncate max-w-full hidden sm:block">
+                      {invite.email}
                     </span>
-                  ))
-                }
-                <RsvpBadge status={status} />
+                  )}
+                </div>
 
-                <div className="flex gap-1 ml-auto shrink-0 flex-wrap justify-end">
+                {/* Actions */}
+                <div className="flex flex-wrap gap-1.5 mt-2 pl-7">
                   <button
                     className={btn} style={{ boxShadow: RAISED }}
                     onClick={() => {
@@ -582,9 +606,6 @@ export function AdminDashboard() {
                     }}
                   >EDIT</button>
 
-                  <button className={danger} style={{ boxShadow: RAISED }}
-                    onClick={() => deleteInvite(invite.id, invite.display_name)}>DEL</button>
-
                   {invite.email && status !== 'done' && (
                     <button className={btn} style={{ boxShadow: RAISED }}
                       onClick={() => sendReminder(invite.id)}>
@@ -596,12 +617,15 @@ export function AdminDashboard() {
                     onClick={() => resetRsvp(invite.id, invite.display_name)}>
                     RESET RSVP
                   </button>
+
+                  <button className={danger} style={{ boxShadow: RAISED }}
+                    onClick={() => deleteInvite(invite.id, invite.display_name)}>DEL</button>
                 </div>
               </div>
 
               {/* Expanded: contact details + guests */}
               {isExpanded && (
-                <div className="pl-9 pr-3 pb-3 bg-[var(--color-chrome)]/10 space-y-1">
+                <div className="pl-4 sm:pl-9 pr-3 pb-3 bg-[var(--color-chrome)]/10 space-y-1">
                   {/* Contact fields */}
                   {(invite.address || invite.phone || invite.notes) && (
                     <div className="py-1.5 space-y-0.5 border-b border-[var(--color-text)]/5 mb-2">
@@ -671,11 +695,11 @@ export function AdminDashboard() {
                         ) : (
                           /* ── Display row ── */
                           <div className="flex items-start gap-3 flex-wrap">
-                            <span className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-text)] min-w-[130px]">
+                            <span className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-text)] w-full sm:w-auto sm:min-w-[130px]">
                               {g.first_name} {g.last_name}
                             </span>
                             {g.rsvp_submitted_at ? (
-                              <div className="flex flex-wrap gap-x-3 gap-y-0 font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)] flex-1">
+                              <div className="flex flex-wrap gap-x-3 gap-y-0 font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)] flex-1 min-w-0">
                                 <span>SAT: <b className="text-[var(--color-text)]">{g.attending_saturday ? '✓' : '✗'}</b></span>
                                 <span>FRI: <b className="text-[var(--color-text)]">{g.attending_friday ? '✓' : '✗'}</b></span>
                                 <span>SUN: <b className="text-[var(--color-text)]">{g.attending_sunday ? '✓' : '✗'}</b></span>
@@ -686,7 +710,7 @@ export function AdminDashboard() {
                             ) : (
                               <span className="font-[family-name:var(--font-vt323)] text-xs text-[#9A8898] flex-1">Not yet RSVPed</span>
                             )}
-                            <div className="flex gap-1 ml-auto">
+                            <div className="flex gap-1 flex-wrap w-full sm:w-auto sm:ml-auto">
                               <button className={btn} style={{ boxShadow: RAISED }}
                                 onClick={() => { setEditingGuestNameId(g.id); setGuestNameDraft({ first_name: g.first_name, last_name: g.last_name }) }}>
                                 RENAME
