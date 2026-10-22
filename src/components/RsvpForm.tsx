@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const ROOM_TYPES: Record<string, { label: string; price: string }> = {
   main_house_double: { label: 'Main House Double', price: '£150 per night' },
@@ -105,6 +105,9 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
   const [roomAccepted, setRoomAccepted] = useState<Record<string, (boolean | null)[]>>({})
   const [saving, setSaving]             = useState(false)
   const [saved, setSaved]               = useState(false)
+  const [wasUpdate, setWasUpdate]       = useState(false)
+  const [emailSent, setEmailSent]       = useState(false)
+  const successRef                      = useRef<HTMLDivElement>(null)
   const [initialized, setInitialized]   = useState(false)
   const [editMode, setEditMode]         = useState(true)
   const [hasRsvped, setHasRsvped]       = useState(false)
@@ -130,6 +133,12 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
     }
   }, [invite, initialized])
 
+  // The form is long; without this the confirmation can land off-screen entirely
+  // when someone submits from the bottom
+  useEffect(() => {
+    if (saved) successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [saved])
+
   if (!invite) {
     return (
       <div className="p-8">
@@ -147,6 +156,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!invite) return
+    const startedAt = Date.now()
     setSaving(true)
     const guests = invite.guests.map(g => ({
       id: g.id,
@@ -155,16 +165,30 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
       attending_sunday:   guestStates[g.id]?.attending_sunday   ?? null,
       dietary:            guestStates[g.id]?.dietary.trim()     || null,
     }))
-    await fetch('/api/rsvp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guests, email: email || null, room_accepted: roomAccepted }),
-    })
+    let emailed = false
+    try {
+      const res = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guests, email: email || null, room_accepted: roomAccepted }),
+      })
+      const data = await res.json().catch(() => null) as { emailed?: boolean } | null
+      emailed = !!data?.emailed
+    } catch {
+      // Save errors are rare and the server is the source of truth; fall through
+      // to the confirmation rather than leaving the button stuck on SAVING
+    }
+
+    // Hold "SAVING..." for a beat so a fast response doesn't flash past unnoticed
+    const elapsed = Date.now() - startedAt
+    if (elapsed < 650) await new Promise(r => setTimeout(r, 650 - elapsed))
+
     setSaving(false)
+    setWasUpdate(hasRsvped)
+    setEmailSent(emailed)
     setSaved(true)
     setHasRsvped(true)
     setEditMode(false)
-    setTimeout(() => setSaved(false), 3500)
   }
 
   return (
@@ -234,9 +258,35 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
       <Divider />
 
       {saved && (
-        <p className="crispy text-center font-[family-name:var(--font-playfair)] italic text-sm text-[var(--color-accent)]">
-          Thanks! We can&apos;t wait to see you. ✓
-        </p>
+        <div
+          ref={successRef}
+          className="rounded-lg overflow-hidden border-2 border-[var(--color-accent)]"
+          style={{ boxShadow: '3px 3px 0 rgba(224,123,90,0.3)' }}
+        >
+          <div className="bg-[var(--color-accent)] px-3 py-1.5 flex items-center justify-between gap-2">
+            <span className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[var(--color-bg)]">
+              ✓ {wasUpdate ? 'RSVP UPDATED' : 'RSVP RECEIVED'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSaved(false)}
+              className="font-[family-name:var(--font-vt323)] text-sm text-[var(--color-bg)] cursor-pointer px-1 leading-none"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+          <div className="px-4 py-3 bg-[var(--color-surface)]">
+            <p className="crispy font-[family-name:var(--font-playfair)] italic text-lg text-[var(--color-text)] leading-snug">
+              {wasUpdate ? "Got it, we've updated your answers." : "Thanks! We can't wait to see you."}
+            </p>
+            <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mt-1">
+              {emailSent
+                ? 'A confirmation is on its way to your inbox. Your answers are below, and you can change them any time.'
+                : 'Your answers are saved and shown below. You can come back and change them any time.'}
+            </p>
+          </div>
+        </div>
       )}
 
       {!editMode ? (

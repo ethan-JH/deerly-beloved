@@ -661,12 +661,18 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
 
           <div className="mb-5">
             <h3 className="font-[family-name:var(--font-vt323)] text-xl tracking-widest text-[var(--color-primary)] mb-1">
-              I&apos;m coming from London / other places in England
+              I&apos;m coming from London / other places in Britain
             </h3>
             <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mb-2">
               The nearest and easiest train station to the events is Tiverton Parkway, but there&apos;s also Honiton
               and Cranbrook. For Londoners, your best bet if you&apos;re not driving is the London Paddington trains
               to Tiverton Parkway and a taxi from there to proceedings.
+            </p>
+            <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mb-2">
+              For the Welsh contingent, it&apos;s the M4 east and then the M5 south at Bristol, which is about two and
+              a half hours from Cardiff if the traffic behaves. The Severn tolls have been gone since 2018 so you
+              don&apos;t even need to dig out the loose change any more. On the train it&apos;s Cardiff Central to
+              Bristol Temple Meads, then change there for Tiverton Parkway.
             </p>
             <div className="flex gap-3 flex-wrap">
               <MapLink query="Tiverton Parkway railway station" label="TIVERTON PARKWAY" />

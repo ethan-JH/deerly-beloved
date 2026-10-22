@@ -48,33 +48,55 @@ export async function POST(request: NextRequest) {
     .select('display_name, email, room_counts, room_accepted')
     .single()
 
-  if (invite?.email) {
-    const { data: guests } = await db
-      .from('guests')
-      .select('first_name, last_name, attending_saturday, attending_friday, attending_sunday, dietary')
-      .eq('invite_id', inviteId)
-      .order('created_at', { ascending: true })
+  // The RSVP itself is already saved at this point. Email is best-effort: it must
+  // never fail the submission, but it must not fail *silently* either.
+  let emailed = false
+  let emailError: string | null = null
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? request.headers.get('origin') ?? 'https://bechanandethan.wedding'
-    const { subject, html, text } = buildRsvpEmail({
-      displayName: invite.display_name,
-      isUpdate,
-      guests: guests ?? [],
-      roomCounts: invite.room_counts ?? {},
-      roomAccepted: invite.room_accepted ?? {},
-      siteUrl,
-    })
+  if (!invite?.email) {
+    emailError = 'no email on invite'
+  } else if (!process.env.RESEND_API_KEY) {
+    emailError = 'RESEND_API_KEY is not set'
+    console.error('[rsvp] confirmation email skipped:', emailError)
+  } else {
+    try {
+      const { data: guests } = await db
+        .from('guests')
+        .select('first_name, last_name, attending_saturday, attending_friday, attending_sunday, dietary')
+        .eq('invite_id', inviteId)
+        .order('created_at', { ascending: true })
 
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    await resend.emails.send({
-      from: 'Bechan & Ethan <donotreply@bechanandethan.wedding>',
-      to: invite.email,
-      replyTo: 'eharbinson966@gmail.com',
-      subject,
-      html,
-      text,
-    })
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? request.headers.get('origin') ?? 'https://bechanandethan.wedding'
+      const { subject, html, text } = buildRsvpEmail({
+        displayName: invite.display_name,
+        isUpdate,
+        guests: guests ?? [],
+        roomCounts: invite.room_counts ?? {},
+        roomAccepted: invite.room_accepted ?? {},
+        siteUrl,
+      })
+
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const { error } = await resend.emails.send({
+        from: 'Bechan & Ethan <partytime@bechanandethan.wedding>',
+        to: invite.email,
+        replyTo: 'eharbinson966@gmail.com',
+        subject,
+        html,
+        text,
+      })
+
+      if (error) {
+        emailError = error.message
+        console.error('[rsvp] resend rejected the send:', error)
+      } else {
+        emailed = true
+      }
+    } catch (e) {
+      emailError = e instanceof Error ? e.message : 'unknown error'
+      console.error('[rsvp] confirmation email threw:', e)
+    }
   }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, emailed, emailError })
 }
