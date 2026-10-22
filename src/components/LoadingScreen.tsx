@@ -71,16 +71,17 @@ export function LoadingScreen({ onComplete }: { onComplete: () => void }) {
     const msgQueue = shuffled(MESSAGES.length)
     let msgIdx = 0
 
+    // 1% per 40ms = 100% in 4s, then a short beat before the dissolve takes over
     const progressTimer = setInterval(() => {
       setProgress(p => {
         const next = Math.min(100, p + 1)
         if (next >= 100 && !completed.current) {
           completed.current = true
-          setTimeout(onComplete, 700)
+          setTimeout(onComplete, 220)
         }
         return next
       })
-    }, 60)
+    }, 40)
 
     const msgTimer = setInterval(() => {
       if (msgIdx >= msgQueue.length) msgIdx = 0

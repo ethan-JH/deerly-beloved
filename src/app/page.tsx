@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { DraggableWindow } from '@/components/DraggableWindow'
 import { Taskbar } from '@/components/Taskbar'
 import { LoadingScreen } from '@/components/LoadingScreen'
@@ -122,6 +122,104 @@ const CHROME_BTN = {
   background: 'var(--color-chrome)',
   boxShadow: '2px 2px 0 rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.15)',
 } as const
+
+// Full-screen block dissolve that erases the loading screen's backdrop to reveal
+// the desktop underneath — same visual language as the loading slideshow transition
+function PixelDissolveOut({ onDone }: { onDone: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const doneRef = useRef(onDone)
+  doneRef.current = onDone
+
+  // Layout effect, not a plain effect: the backdrop has to be painted in the same
+  // frame the loading screen unmounts, or the desktop flashes through for a beat
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const w = window.innerWidth
+    const h = window.innerHeight
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    // Repaint the loading screen's exact backdrop so the handover is seamless
+    ctx.fillStyle = '#FAF4C6'
+    ctx.fillRect(0, 0, w, h)
+    ctx.fillStyle = 'rgba(13,31,60,0.1)'
+    for (let y = 0; y < h; y += 8) {
+      for (let x = 0; x < w; x += 8) ctx.fillRect(x, y, 2, 2)
+    }
+
+    const BLOCK = 24
+    const cols = Math.ceil(w / BLOCK)
+    const rows = Math.ceil(h / BLOCK)
+    const order = Array.from({ length: cols * rows }, (_, i) => i)
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[order[i], order[j]] = [order[j], order[i]]
+    }
+
+    const DURATION = 550
+    const start = performance.now()
+    let cleared = 0
+    let raf = 0
+
+    function frame(now: number) {
+      const t = Math.min(1, (now - start) / DURATION)
+      const target = Math.ceil(t * order.length)
+      for (let i = cleared; i < target; i++) {
+        const b = order[i]
+        ctx!.clearRect((b % cols) * BLOCK, Math.floor(b / cols) * BLOCK, BLOCK, BLOCK)
+      }
+      cleared = target
+      if (t >= 1) { doneRef.current(); return }
+      raf = requestAnimationFrame(frame)
+    }
+    raf = requestAnimationFrame(frame)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  return <canvas ref={canvasRef} className="fixed inset-0 z-[99998] pointer-events-none" />
+}
+
+// The Win95 wireframe zoom: a dotted outline stepping outward into the window's
+// final position before the window itself appears
+function WireframeZoom({ to, onDone }: { to: { x: number; y: number; w: number; h: number }; onDone: () => void }) {
+  const [step, setStep] = useState(0)
+  const doneRef = useRef(onDone)
+  doneRef.current = onDone
+  const STEPS = 4
+
+  useEffect(() => {
+    let i = 0
+    const id = setInterval(() => {
+      i++
+      if (i >= STEPS) { clearInterval(id); doneRef.current() }
+      else setStep(i)
+    }, 45)
+    return () => clearInterval(id)
+  }, [])
+
+  const t = (step + 1) / STEPS
+  const cx = to.x + to.w / 2
+  const cy = to.y + to.h / 2
+  const w = Math.max(40, to.w * t)
+  const h = Math.max(28, to.h * t)
+
+  return (
+    <div
+      className="fixed pointer-events-none z-[9998]"
+      style={{
+        left: cx - w / 2,
+        top: cy - h / 2,
+        width: w,
+        height: h,
+        border: '2px dotted var(--color-text)',
+        borderRadius: 8,
+      }}
+    />
+  )
+}
 
 function TopBar({ clock, invite }: { clock: string | null; invite: InviteData | null }) {
   return (
@@ -736,7 +834,8 @@ export default function DesktopPage() {
     }))
   )
   const maxZRef = useRef(1)
-  const [loading, setLoading] = useState(true)
+  const [phase, setPhase] = useState<'loading' | 'dissolving' | 'done'>('loading')
+  const [zooming, setZooming] = useState<Record<string, { x: number; y: number; w: number; h: number }>>({})
   const [clock, setClock] = useState<string | null>(null)
   const [invite, setInvite] = useState<InviteData | null>(null)
 
@@ -791,8 +890,8 @@ export default function DesktopPage() {
         }
         return {
           ...w,
-          isOpen: w.id === 'home',
-          zIndex: w.id === 'home' ? 1 : 0,
+          isOpen: false,
+          zIndex: 0,
           spawnPosition: { x, y },
         }
       })
@@ -805,17 +904,38 @@ export default function DesktopPage() {
     setWindows((ws) => ws.map((w) => (w.id === id ? { ...w, zIndex: next } : w)))
   }
 
-  function toggleWindow(id: string) {
-    setWindows((ws) => {
-      const win = ws.find((w) => w.id === id)
-      if (win?.isOpen) {
-        return ws.map((w) => (w.id === id ? { ...w, isOpen: false } : w))
-      } else {
-        maxZRef.current += 1
-        const next = maxZRef.current
-        return ws.map((w) => (w.id === id ? { ...w, isOpen: true, zIndex: next } : w))
-      }
+  // Rough target for the wireframe to expand into. The real window sizes itself
+  // to its content, so this only needs to be close enough to read as the effect.
+  function zoomTarget(id: string, spawn: { x: number; y: number }) {
+    const availH = window.innerHeight - spawn.y - 96
+    const h = Math.max(220, Math.min(id === 'home' ? 460 : 520, availH))
+    return { x: spawn.x, y: spawn.y, w: getWidth(id), h }
+  }
+
+  function openWindow(id: string) {
+    const win = windows.find((w) => w.id === id)
+    if (!win) return
+    setZooming((z) => ({ ...z, [id]: zoomTarget(id, win.spawnPosition) }))
+  }
+
+  function finishZoom(id: string) {
+    setZooming((z) => {
+      const next = { ...z }
+      delete next[id]
+      return next
     })
+    maxZRef.current += 1
+    const z = maxZRef.current
+    setWindows((ws) => ws.map((w) => (w.id === id ? { ...w, isOpen: true, zIndex: z } : w)))
+  }
+
+  function toggleWindow(id: string) {
+    const win = windows.find((w) => w.id === id)
+    if (win?.isOpen) {
+      setWindows((ws) => ws.map((w) => (w.id === id ? { ...w, isOpen: false } : w)))
+    } else if (!zooming[id]) {
+      openWindow(id)
+    }
   }
 
   function closeWindow(id: string) {
@@ -831,9 +951,22 @@ export default function DesktopPage() {
         imageRendering: 'pixelated',
       }}
     >
-      {loading && <LoadingScreen onComplete={() => setLoading(false)} />}
+      {phase === 'loading' && <LoadingScreen onComplete={() => setPhase('dissolving')} />}
 
-      {!loading && (
+      {phase === 'dissolving' && (
+        <PixelDissolveOut
+          onDone={() => {
+            setPhase('done')
+            openWindow('home')
+          }}
+        />
+      )}
+
+      {Object.entries(zooming).map(([id, to]) => (
+        <WireframeZoom key={id} to={to} onDone={() => finishZoom(id)} />
+      ))}
+
+      {phase !== 'loading' && (
         <>
           <TopBar clock={clock} invite={invite} />
           <div className="absolute inset-0 pt-7 pb-20 overflow-hidden">
