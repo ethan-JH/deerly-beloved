@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { COPY } from '@/content/copy'
+import { renderCopy, flow } from '@/content/render'
 
 const ROOM_TYPES: Record<string, { label: string; price: string }> = {
   main_house_double: { label: 'Main House Double', price: '£150 per night' },
@@ -196,38 +198,19 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
 
       {/* Title */}
       <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-3xl text-[var(--color-primary)] leading-tight">
-        Let us know if you can make it!
+        {COPY.rsvp.title}
       </h2>
 
       {/* Intro */}
       <div className="space-y-3">
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
-          You can read the exact details in the{' '}
-          <button
-            type="button"
-            onClick={onOpenItinerary}
-            className="text-[var(--color-primary)] underline underline-offset-2 cursor-pointer"
-          >
-            itinerary
-          </button>
-          , but the big day — which is hopefully already on your calendar — is on{' '}
-          <span className="text-[var(--color-text)]">Saturday 12th June at Deer Park Country House, Honiton, starting at 1:30pm</span>.
-          That&apos;ll be the main ceremony followed by the reception, wedding breakfast, dancing, the whole shebang.
+          {renderCopy(COPY.rsvp.saturday, onOpenItinerary)}
         </p>
 
         <Photo src="/photos/89.jpg" caption="Deer Park Country House" className="max-w-[220px] mx-auto" />
 
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
-          But as an optional bonus for any of our guests willing to watch us get married twice, our legal wedding ceremony
-          is the evening before, starting{' '}
-          <span className="text-[var(--color-text)]">5pm Friday 11th June, at St Andrew&apos;s Church in Broadhembury village</span>.
-          Broadhembury is near and dear to Bechan and the Thomas family, where they spent almost every school holiday
-          throughout Bechan&apos;s childhood. It&apos;s very special for us to be getting (legally) married there, and we thought it
-          would be lovely to extend the invite to everyone. With that said, there&apos;s absolutely no pressure to come down for the
-          Friday if you can&apos;t make it or don&apos;t fancy it. We can&apos;t offer you accommodation for the Friday but we are
-          booking out the Drewe Arms for dinner and drinks after the church ceremony. The Drewe Arms is not only a 30 second
-          walk away from the church, but our panel of incredibly biased judges do regard it as the best pub in Devon, and
-          possibly the World.
+          {renderCopy(COPY.rsvp.friday)}
         </p>
 
         <div className="flex gap-3 justify-center">
@@ -236,8 +219,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
         </div>
 
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
-          As another optional extra for post-wedding recovery, on Sunday 13th June Bechan&apos;s parents Dale &amp; Catherine
-          have very kindly offered to host a BBQ brunch back at their family home in Broadhembury; the address is
+          {renderCopy(COPY.rsvp.sundayBeforeAddress)}
         </p>
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-text)] leading-relaxed text-center">
           {invite.sunday_venue_address
@@ -245,13 +227,11 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
             : 'Address details coming soon.'}
         </p>
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
-          There is a pool so bring your swimmers for a dip to cure your sore head. We don&apos;t want to make any premature
-          promises but a hog roast has been thrown around as a possibility if enough folk are coming, so let us know if
-          you fancy it.
+          {renderCopy(COPY.rsvp.sundayAfterAddress)}
         </p>
 
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
-          If you can make it we can&apos;t wait to welcome you to Devon!
+          {renderCopy(COPY.rsvp.closing)}
         </p>
       </div>
 
@@ -265,7 +245,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
         >
           <div className="bg-[var(--color-accent)] px-3 py-1.5 flex items-center justify-between gap-2">
             <span className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[var(--color-bg)]">
-              ✓ {wasUpdate ? 'RSVP UPDATED' : 'RSVP RECEIVED'}
+              ✓ {wasUpdate ? COPY.rsvp.confirmUpdatedTitle : COPY.rsvp.confirmSentTitle}
             </span>
             <button
               type="button"
@@ -278,12 +258,12 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
           </div>
           <div className="px-4 py-3 bg-[var(--color-surface)]">
             <p className="crispy font-[family-name:var(--font-playfair)] italic text-lg text-[var(--color-text)] leading-snug">
-              {wasUpdate ? "Got it, we've updated your answers." : "Thanks! We can't wait to see you."}
+              {wasUpdate ? COPY.rsvp.confirmUpdatedHeadline : COPY.rsvp.confirmSentHeadline}
             </p>
             <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mt-1">
               {emailSent
-                ? 'A confirmation is on its way to your inbox. Your answers are below, and you can change them any time.'
-                : 'Your answers are saved and shown below. You can come back and change them any time.'}
+                ? flow(COPY.rsvp.confirmWithEmail)
+                : flow(COPY.rsvp.confirmWithoutEmail)}
             </p>
           </div>
         </div>
@@ -293,7 +273,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
         /* ── Summary view — shown once RSVPed, to stop accidental resubmission ── */
         <div className="space-y-5">
           <p className="crispy font-[family-name:var(--font-playfair)] italic text-base text-[var(--color-text)]">
-            Here&apos;s what we&apos;ve got on file for you:
+            {COPY.rsvp.summaryIntro}
           </p>
 
           <div className="space-y-4">
@@ -345,7 +325,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
             className="w-full bg-[var(--color-primary)] text-[var(--color-bg)] py-3 font-[family-name:var(--font-vt323)] text-xl tracking-widest cursor-pointer"
             style={{ boxShadow: '3px 3px 0 var(--color-accent)' }}
           >
-            UPDATE MY RSVP
+            {COPY.rsvp.updateMyRsvpButton}
           </button>
         </div>
       ) : (
@@ -361,29 +341,29 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
                   </div>
                 )}
                 <YesNo
-                  label="Saturday 12th June — Deer Park Country House?"
+                  label={COPY.rsvp.saturdayQuestion}
                   value={guestStates[g.id]?.attending_saturday ?? null}
                   onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_saturday: v } }))}
                 />
                 <YesNo
-                  label="Friday 11th June — St Andrew's Church, Broadhembury?"
+                  label={COPY.rsvp.fridayQuestion}
                   value={guestStates[g.id]?.attending_friday ?? null}
                   onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_friday: v } }))}
                 />
                 <YesNo
-                  label="Sunday 13th June — BBQ brunch at Bechan's family home?"
+                  label={COPY.rsvp.sundayQuestion}
                   value={guestStates[g.id]?.attending_sunday ?? null}
                   onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_sunday: v } }))}
                 />
                 <div className="pt-1">
                   <label className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">
-                    DIETARY REQUIREMENTS (IF ANY)
+                    {COPY.rsvp.dietaryLabel}
                   </label>
                   <input
                     type="text"
                     value={guestStates[g.id]?.dietary ?? ''}
                     onChange={e => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], dietary: e.target.value } }))}
-                    placeholder="e.g. vegetarian, nut allergy, gluten free…"
+                    placeholder={COPY.rsvp.dietaryPlaceholder}
                     className="w-full mt-1 border border-[var(--color-primary)]/40 bg-transparent px-3 py-2 font-[family-name:var(--font-vt323)] text-sm tracking-wide text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
                   />
                 </div>
@@ -397,11 +377,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
               <Divider />
               <div className="space-y-3">
                 <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
-                  You lucky duck{multipleGuests ? 's' : ''}! We have limited rooms at Deer Park for the Saturday night but we love
-                  you so much / want you to stay up late so we prioritised giving you a room. Please brag loudly at the wedding
-                  about how much better you are than the other guests and how much more we like you. We&apos;ve put the price per
-                  night of the room beside the input, but if you&apos;d rather sort out your own accommodation that&apos;s equally no
-                  issue. Just let us know and we&apos;ll give someone else the bragging rights.
+                  {renderCopy(COPY.rsvp.roomsIntro)}
                 </p>
                 <div className="space-y-1.5">
                   {assignedRooms.flatMap(([type, count]) => {
@@ -430,7 +406,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
           {/* Email */}
           <div className="space-y-1.5">
             <label className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">
-              EMAIL — WE&apos;LL SEND YOUR RSVP CONFIRMATION HERE
+              {COPY.rsvp.emailLabel}
             </label>
             <input
               type="email"
@@ -449,7 +425,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
               className="w-full bg-[var(--color-primary)] text-[var(--color-bg)] py-3 font-[family-name:var(--font-vt323)] text-xl tracking-widest cursor-pointer disabled:opacity-50 transition-opacity"
               style={{ boxShadow: '3px 3px 0 var(--color-accent)' }}
             >
-              {saving ? 'SAVING…' : hasRsvped ? 'UPDATE RSVP' : 'SEND RSVP'}
+              {saving ? 'SAVING…' : hasRsvped ? COPY.rsvp.updateButton : COPY.rsvp.sendButton}
             </button>
             {hasRsvped && (
               <button

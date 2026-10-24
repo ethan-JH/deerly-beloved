@@ -5,6 +5,10 @@ const ROOM_TYPES: Record<string, { label: string; price: string }> = {
   treehouse:         { label: 'The Treehouse',       price: 'Bridal Suite'   },
 }
 
+// Real inbox guests can write to. partytime@ is send-only (Resend receiving is
+// off), so replies work but a fresh email to that address would bounce.
+export const CONTACT_EMAIL = 'eharbinson966@gmail.com'
+
 const COLORS = {
   bg: '#FAF4C6',
   surface: '#FFFFFF',
@@ -119,7 +123,8 @@ export function buildRsvpEmail(opts: RsvpEmailOpts): { subject: string; html: st
         <p style="font-family:Georgia,'Times New Roman',serif;font-style:italic;color:${COLORS.accent};font-size:15px;margin:26px 0 0;">Bechan &amp; Ethan</p>
 
         <p style="font-family:'Courier New',Courier,monospace;font-size:10px;letter-spacing:0.5px;color:${COLORS.muted};margin-top:24px;line-height:1.5;">
-          This is an automated confirmation sent from a do-not-reply address. Hit reply if you need to ask us anything, it'll still reach us.
+          This is an automated confirmation. Hit reply if you need to ask us anything, or email us directly at
+          <a href="mailto:${CONTACT_EMAIL}" style="color:${COLORS.primary};">${CONTACT_EMAIL}</a>.
         </p>
       </td>
     </tr>
@@ -144,6 +149,8 @@ export function buildRsvpEmail(opts: RsvpEmailOpts): { subject: string; html: st
     `View or update your RSVP any time: ${siteUrl}`,
     '',
     'Bechan & Ethan',
+    '',
+    `Questions? Reply to this email or write to us at ${CONTACT_EMAIL}`,
   ].join('\n')
 
   return { subject, html, text }

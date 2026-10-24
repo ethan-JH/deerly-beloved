@@ -6,6 +6,8 @@ import { Taskbar } from '@/components/Taskbar'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { BreakoutGame } from '@/components/BreakoutGame'
 import { RsvpForm } from '@/components/RsvpForm'
+import { COPY } from '@/content/copy'
+import { renderCopy, flow } from '@/content/render'
 
 interface WinState {
   id: string
@@ -280,60 +282,18 @@ function StayCard({
 function AlternativeAccommodation() {
   return (
     <>
-      <StayCard
-        name="The Pig at Combe"
-        price="£££"
-        tag="The splurge"
-        query="The Pig at Combe, Gittisham, Honiton"
-      >
-        The boujee option, and a very short drive from Deer Park. Beautiful grounds and a fantastic restaurant,
-        worth the splurge. Note they require a minimum 2-night stay on weekends, so book early.
-      </StayCard>
-
-      <StayCard
-        name="The Tumbling Weir Hotel"
-        price="££"
-        tag="In town"
-        query="The Tumbling Weir Hotel, Ottery St Mary"
-      >
-        A comfortable, mid-range option with a restaurant attached.
-      </StayCard>
-
-      <StayCard
-        name="Premier Inn Honiton"
-        price="£"
-        tag="Cheap and cheerful"
-        query="Premier Inn Honiton"
-      >
-        Reliable, no-frills, and right in Honiton. The safe bet if you just need a bed and a shower.
-      </StayCard>
-
-      <StayCard
-        name="Buckley Farmhouse"
-        price="££"
-        tag="Country B&B"
-        query="Buckley Farmhouse, Devon"
-      >
-        A charming farmhouse B&amp;B with excellent reviews, a little further out.
-      </StayCard>
-
-      <StayCard
-        name="The White Hart Inn"
-        price="££"
-        tag="Village inn"
-        query="The White Hart Inn, Wilmington, Honiton"
-      >
-        A cosy village inn a short drive away, in Wilmington.
-      </StayCard>
+      {COPY.stay.options.map(o => (
+        <StayCard key={o.name} name={o.name} price={o.price} tag={o.tag} query={o.mapQuery}>
+          {flow(o.description)}
+        </StayCard>
+      ))}
 
       <div className="mt-4 px-3 py-2.5 border-l-4 rounded-r-md" style={{ borderColor: 'var(--color-primary)', background: 'rgba(23,96,176,0.06)' }}>
         <span className="font-[family-name:var(--font-vt323)] text-[11px] tracking-widest text-[var(--color-primary)]">
           ALSO WORTH A LOOK
         </span>
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mt-1">
-          There are plenty of Airbnbs dotted around the area if you&apos;d prefer somewhere more independent,
-          and if you&apos;d rather stay somewhere bigger, Exeter and Taunton are the nearest larger towns with a
-          wider range of places to stay.
+          {flow(COPY.stay.alsoWorthALook)}
         </p>
       </div>
     </>
@@ -439,7 +399,7 @@ function TimelineRow({ time, event }: { time: string; event: string }) {
         {time}
       </span>
       <span className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-text)] leading-snug">
-        {event}
+        {flow(event)}
       </span>
     </div>
   )
@@ -456,7 +416,7 @@ function DaySection({
         <h3 className="font-[family-name:var(--font-vt323)] text-2xl tracking-widest text-[var(--color-primary)]">
           {day}
         </h3>
-        <DayBadge label={badge === 'main' ? 'MAIN EVENT' : 'OPTIONAL IF YOU CAN MAKE IT'} variant={badge} />
+        <DayBadge label={flow(badge === 'main' ? COPY.itinerary.mainEventBadge : COPY.itinerary.optionalBadge)} variant={badge} />
       </div>
       <p className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)] mb-0.5">
         {dateLabel}
@@ -495,10 +455,10 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
             </div>
             <div className="w-8 h-0.5 bg-[var(--color-accent)]" />
             <p className="crispy font-[family-name:var(--font-playfair)] italic text-sm text-[var(--color-text)]">
-              You are cordially invited to the wedding of
+              {COPY.home.invitedLine}
             </p>
             <h1 className="crispy font-[family-name:var(--font-playfair)] italic font-normal text-4xl text-[var(--color-primary)] leading-tight">
-              Bechan &amp; Ethan
+              {COPY.home.names}
             </h1>
             <div className="relative overflow-hidden rounded" style={{ aspectRatio: '4/3', width: '100%', maxWidth: 280 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -513,10 +473,10 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
                 style={{ background: 'rgba(13,31,60,0.5)' }}
               >
                 <p className="font-[family-name:var(--font-vt323)] text-sm tracking-[0.2em] text-[var(--color-bg)]">
-                  SATURDAY &middot; 12TH JUNE 2027
+                  {COPY.home.photoDate}
                 </p>
                 <p className="crispy font-[family-name:var(--font-playfair)] italic text-xs text-[var(--color-bg)]/80">
-                  Deer Park Country House &middot; Devon, England
+                  {COPY.home.photoVenue}
                 </p>
               </div>
             </div>
@@ -525,7 +485,7 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
               className="bg-[var(--color-primary)] text-[var(--color-bg)] text-xl tracking-widest px-10 py-3 transition-transform hover:-translate-y-px active:translate-y-0 cursor-pointer font-[family-name:var(--font-vt323)]"
               style={{ boxShadow: '4px 4px 0 var(--color-accent)' }}
             >
-              RSVP NOW
+              {COPY.home.rsvpButton}
             </button>
           </div>
         </div>
@@ -544,7 +504,7 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
       const hasSingle = assignedTypes.includes('garden_single')
       return assignedRooms.length > 0 ? (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">Accommodation</h2>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">{COPY.stay.titleWithRoom}</h2>
 
           {/* Reserved room, framed as its own little keepsake card */}
           <div
@@ -561,13 +521,13 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
               />
               <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(13,31,60,0.55)' }}>
                 <span className="font-[family-name:var(--font-vt323)] text-xl tracking-[0.2em] text-[var(--color-bg)] text-center px-4">
-                  RESERVED FOR YOU
+                  {COPY.stay.reservedBadge}
                 </span>
               </div>
             </div>
             <div className="px-4 py-3 bg-[var(--color-surface)]">
               <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed mb-3">
-                Congrats! We&apos;ve already reserved a room for you at Deer Park on the night of Saturday 12th June 2027.
+                {flow(COPY.stay.reservedIntro)}
               </p>
               {assignedRooms.map((r, i) => (
                 <div
@@ -586,31 +546,26 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
           </div>
 
           <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed mb-5">
-            {hasDouble && hasSingle ? (
-              <>Your rooms are available at the nightly rate of £150.00 (to include breakfast) for the double, and
-              £75.00 (to include breakfast) for the single. </>
-            ) : hasDouble ? (
-              <>Your room is available at the nightly rate of £150.00 (to include breakfast). </>
-            ) : hasSingle ? (
-              <>Your room is available at the nightly rate of £75.00 (to include breakfast). </>
-            ) : null}
-            The room is yours if you&apos;d like it, just confirm via your RSVP.
+            {hasDouble && hasSingle ? `${flow(COPY.stay.rateBoth)} `
+              : hasDouble ? `${flow(COPY.stay.rateDouble)} `
+              : hasSingle ? `${flow(COPY.stay.rateSingle)} `
+              : ''}
+            {flow(COPY.stay.rateClosing)}
           </p>
 
           <h3 className="font-[family-name:var(--font-vt323)] text-xl tracking-widest text-[var(--color-primary)] mb-1">
-            Prefer to stay elsewhere?
+            {COPY.stay.elsewhereHeading}
           </h3>
           <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mb-4">
-            No problem at all. A few other options nearby:
+            {flow(COPY.stay.elsewhereIntro)}
           </p>
           <AlternativeAccommodation />
         </div>
       ) : (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">Places to Stay</h2>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">{COPY.stay.titleWithoutRoom}</h2>
           <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] mb-5 leading-relaxed">
-            We don&apos;t have a room booked for you at Deer Park, but there&apos;s plenty of lovely accommodation
-            nearby in and around Honiton. Here are a few options to get you started.
+            {flow(COPY.stay.noRoomIntro)}
           </p>
           <AlternativeAccommodation />
         </div>
@@ -619,40 +574,39 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
     case 'itinerary':
       return (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-2">The Weekend</h2>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-2">{COPY.itinerary.title}</h2>
           <p className="crispy font-[family-name:var(--font-playfair)] italic text-xs text-[var(--color-muted)] mb-5">
-            Saturday times below (other than the ceremony itself) and the Sunday time are our best guesstimates, not gospel!
+            {flow(COPY.itinerary.disclaimer)}
           </p>
 
-          <DaySection day="FRIDAY" dateLabel="11TH JUNE" badge="optional" location="St Andrew's Church, Broadhembury">
-            <TimelineRow time="5:00pm" event="Legal wedding ceremony" />
-            <TimelineRow time="Evening" event="Dinner & drinks at The Drewe Arms, Broadhembury" />
+          <DaySection day="FRIDAY" dateLabel="11TH JUNE" badge="optional" location={COPY.itinerary.friday.location}>
+            {COPY.itinerary.friday.events.map(e => (
+              <TimelineRow key={e.time} time={e.time} event={e.event} />
+            ))}
           </DaySection>
 
-          <DaySection day="SATURDAY" dateLabel="12TH JUNE" badge="main" location="Deer Park Country House, Honiton">
+          <DaySection day="SATURDAY" dateLabel="12TH JUNE" badge="main" location={COPY.itinerary.saturday.location}>
             <div className="mb-2 px-3 py-2 border-l-4" style={{ borderColor: 'var(--color-accent)', background: 'rgba(224,123,90,0.08)' }}>
               <p className="font-[family-name:var(--font-vt323)] text-xs tracking-widest leading-snug text-[var(--color-accent)]">
-                WE WOULD WANT THIS WARNING IF WE WERE GUESTS, SO WE&apos;RE GIVING IT TO YOU: EAT LUNCH BEFOREHAND.
-                YOU WON&apos;T GET A PROPER FEED UNTIL THE EVENING.
+                {flow(COPY.itinerary.lunchWarning)}
               </p>
             </div>
-            <TimelineRow time="1:30pm"  event="Wedding Ceremony Time" />
-            <TimelineRow time="2:30pm"  event="Reception Drinks Time" />
-            <TimelineRow time="4:00pm"  event="Dinner Time" />
-            <TimelineRow time="8:30pm"  event="Party time" />
-            <TimelineRow time="9:30pm"  event="Evening food top up for extra dancing fuel" />
-            <TimelineRow time="Midnight" event="Carriages. Move over from the dancefloor to the nightcap bar in the main house if you're hardcore" />
+            {COPY.itinerary.saturday.events.map(e => (
+              <TimelineRow key={e.time} time={e.time} event={e.event} />
+            ))}
           </DaySection>
 
-          <DaySection day="SUNDAY" dateLabel="13TH JUNE" badge="optional" location={invite?.sunday_venue_short ?? 'Bechan’s family home, Broadhembury'}>
-            <TimelineRow time="11:00am" event="BBQ brunch, pool time, and (possibly) a hog roast" />
+          <DaySection day="SUNDAY" dateLabel="13TH JUNE" badge="optional" location={invite?.sunday_venue_short ?? COPY.itinerary.sunday.locationFallback}>
+            {COPY.itinerary.sunday.events.map(e => (
+              <TimelineRow key={e.time} time={e.time} event={e.event} />
+            ))}
           </DaySection>
         </div>
       )
     case 'travel':
       return (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">Getting There</h2>
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">{COPY.travel.title}</h2>
 
           <EmbeddedMap query="Deer Park Country House, Honiton, Devon" label="FIND DEER PARK" />
           <p className="text-center mb-5">
@@ -661,18 +615,13 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
 
           <div className="mb-5">
             <h3 className="font-[family-name:var(--font-vt323)] text-xl tracking-widest text-[var(--color-primary)] mb-1">
-              I&apos;m coming from London / other places in Britain
+              {COPY.travel.britainHeading}
             </h3>
             <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mb-2">
-              The nearest and easiest train station to the events is Tiverton Parkway, but there&apos;s also Honiton
-              and Cranbrook. For Londoners, your best bet if you&apos;re not driving is the London Paddington trains
-              to Tiverton Parkway and a taxi from there to proceedings.
+              {renderCopy(COPY.travel.britainTrains)}
             </p>
             <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mb-2">
-              For the Welsh contingent, it&apos;s the M4 east and then the M5 south at Bristol, which is about two and
-              a half hours from Cardiff if the traffic behaves. The Severn tolls have been gone since 2018 so you
-              don&apos;t even need to dig out the loose change any more. On the train it&apos;s Cardiff Central to
-              Bristol Temple Meads, then change there for Tiverton Parkway.
+              {renderCopy(COPY.travel.britainWales)}
             </p>
             <div className="flex gap-3 flex-wrap">
               <MapLink query="Tiverton Parkway railway station" label="TIVERTON PARKWAY" />
@@ -683,14 +632,10 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
 
           <div className="mb-5">
             <h3 className="font-[family-name:var(--font-vt323)] text-xl tracking-widest text-[var(--color-primary)] mb-1">
-              I&apos;m coming from Belfast / other places in Ireland
+              {COPY.travel.irelandHeading}
             </h3>
             <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mb-2">
-              The 2 closest airports to Deer Park are Bristol and Exeter.
-              In our experience it&apos;s normally easiest and cheapest to get a SleazyJet flight from Belfast to
-              Bristol and a taxi from Bristol. Although Ryanair also do flights from Dublin to Bristol or Dublin to
-              Exeter. For the more pampered passenger, we know you can get Aer Lingus or British Airways flights from
-              Belfast or Dublin to Bristol or Exeter.
+              {renderCopy(COPY.travel.ireland)}
             </p>
             <div className="flex gap-3 flex-wrap">
               <MapLink query="Bristol Airport" label="BRISTOL AIRPORT" />
@@ -700,32 +645,22 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
 
           <div>
             <h3 className="font-[family-name:var(--font-vt323)] text-xl tracking-widest text-[var(--color-primary)] mb-1">
-              I&apos;m coming from anywhere else on Planet Earth
+              {COPY.travel.elsewhereHeading}
             </h3>
             <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
-              We have a few guests representing team USA, plus others coming from the wider world.
-              We reckon you&apos;ll be getting a flight to London. Then you can just get a train from London Paddington to
-              Tiverton Parkway and taxi the rest of the way as per the Londoner advice above.
+              {renderCopy(COPY.travel.elsewhere)}
             </p>
           </div>
 
           <div className="mt-5">
             <h3 className="font-[family-name:var(--font-vt323)] text-xl tracking-widest text-[var(--color-primary)] mb-1">
-              Local taxis
+              {COPY.travel.taxisHeading}
             </h3>
             <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mb-3">
-              Deer Park is out in the countryside, so you&apos;ll want a taxi booked in advance rather than hoping one
-              turns up. Book early for the Saturday night, as local firms get hammered on wedding weekends. We normally
-              use Sparkys.
+              {renderCopy(COPY.travel.taxisIntro)}
             </p>
             <div className="border border-[var(--color-text)]/15 rounded-md overflow-hidden">
-              {[
-                { name: 'Sparkys Taxis', tel: '01404 47670', note: 'Honiton. The one we use.' },
-                { name: 'Millstream Taxis', tel: '01404 45825', note: 'Honiton' },
-                { name: 'Hello Taxis', tel: '07535 554441', note: 'Honiton High Street' },
-                { name: 'Regency Cars', tel: '01404 549300', note: 'Honiton Business Park' },
-                { name: 'Aquarius Taxis', tel: '07882 002028', note: 'Covers wider East Devon' },
-              ].map((t, i) => (
+              {COPY.travel.taxis.map((t, i) => (
                 <div
                   key={t.name}
                   className={`flex items-baseline justify-between gap-3 px-3 py-2 ${i === 0 ? 'bg-[var(--color-accent)]/10' : ''} ${i > 0 ? 'border-t border-[var(--color-text)]/10' : ''}`}
@@ -753,79 +688,10 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
     case 'faq':
       return (
         <div className="p-8">
-          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">FAQ</h2>
-
-          <FaqItem
-            q="What's the dress code?"
-            a={<>The short answer is Summer suits &amp; dresses with a &ldquo;funky formal&rdquo; theme. For most of you, Bechan (and occasionally Ethan) has almost certainly turned up to one of your
-              events wearing something completely ridiculous, but normally pretty cool, so take this as your opportunity
-              to return the favour. Get those crazy colours or patterns out that you&apos;ve never had the right occasion
-              for otherwise. Bonus points to the men attending for coloured suits, funky ties or cravats.</>}
-          />
-
-          <FaqItem
-            q="Why Devon?"
-            a={<>Broadhembury is pretty much Bechan&apos;s happy place. Dale &amp; Catherine bought the house there around
-              30 years ago and have been taking the Thomas kids there every school holiday they possibly could to get them
-              out of London. So Devon has become a direct association of all their combined childhood memories of
-              Christmases, Easters and Summer holidays, spending that time among the rolling green hills and thatched
-              houses of the South West. Since we started going out in 2018, we still try to get down there as often as
-              possible. Ethan couldn&apos;t believe real places like that existed in England and not just in Noddy or
-              Postman Pat or Enid Blyton books. The people are lovely, the scenery is gorgeous. Playing pool cricket in
-              the sun in Summer or popping down to the Drewe Arms for a pint of Otter Ale and fish and chips by the fire
-              on a cold Winter evening are treasured joys of our life together. If we haven&apos;t already made you visit,
-              we genuinely can&apos;t wait for you to come and see why we love it so much.</>}
-          />
-
-          <FaqItem
-            q="Can I buy you a present?"
-            a={<>Of course the correct thing to do is to say your presence is gift enough, blah blah. But we love stuff
-              too much, so yes please to any prezzies! We&apos;ll post a link to our gift registry here when we finally
-              get our act together and make one.</>}
-          />
-
-          <FaqItem
-            q="What shoes should I wear?"
-            a={<>Bechan will be wearing the most ridiculous high heels ever conceived by mankind, but naturally as
-              it&apos;s the Devon countryside, flat solid ground is by no means a guarantee. We&apos;d recommend taking
-              a pair of flats as a back up for the wobbly bits.</>}
-          />
-
-          <FaqItem
-            q="Can I park my car?"
-            a={<>Deer Park has plenty of onsite parking so should be all good for the Saturday. For the Friday and
-              Sunday, if you&apos;re coming to Broadhembury, the main square has a decent amount of parking but you may
-              have to leave your car slightly up the road if that fills up.</>}
-          />
-
-          <FaqItem
-            q="Can I take my kids?"
-            a={<>Apologies to be a pain, but we&apos;re going adults only for this one. If you&apos;re able to wrangle
-              grandparents or babysitters, we hope that allows you to relinquish all responsibility and maturity and
-              properly let your hair down.</>}
-          />
-
-          {/* Keep the two website questions last — they're an easter egg for anyone who scrolls this far */}
-          <FaqItem
-            q="Who made the website?"
-            a={<>Ethan being a weird computer guy, this was the main thing he could actually have a creative input on.
-              So he&apos;s taken far too long fiddling about on weekends to make this.</>}
-          />
-
-          <FaqItem
-            q="I'm also a weird basement dweller computer guy, how did you make the website?"
-            a={<>Built with Next.js (React), Tailwind CSS and Supabase for the database, hosted on Vercel. The whole
-              retro desktop look is a deliberate homage to (okay, fairly blatant rip off of) the Windows 95 UI. If you
-              want to see exactly how questionable the code is, it&apos;s public on GitHub at{' '}
-              <a
-                href="https://github.com/ethan-JH/deerly-beloved"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--color-primary)] underline underline-offset-2"
-              >
-                github.com/ethan-JH/deerly-beloved
-              </a>.</>}
-          />
+          <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">{COPY.faq.title}</h2>
+          {COPY.faq.questions.map(item => (
+            <FaqItem key={item.q} q={item.q} a={renderCopy(item.a)} />
+          ))}
         </div>
       )
     case 'secret':

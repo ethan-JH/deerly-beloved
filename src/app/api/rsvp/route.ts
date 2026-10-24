@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { buildRsvpEmail } from '@/lib/rsvp-email'
+import { buildRsvpEmail, CONTACT_EMAIL } from '@/lib/rsvp-email'
 
 export async function POST(request: NextRequest) {
   const inviteId = request.cookies.get('guest_session')?.value
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       const { error } = await resend.emails.send({
         from: 'Bechan & Ethan <partytime@bechanandethan.wedding>',
         to: invite.email,
-        replyTo: 'eharbinson966@gmail.com',
+        replyTo: CONTACT_EMAIL,
         subject,
         html,
         text,

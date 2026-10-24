@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { CONTACT_EMAIL } from '@/lib/rsvp-email'
 import { Resend } from 'resend'
 
 function isAdmin(request: NextRequest): boolean {
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
 
   const { error: sendError } = await resend.emails.send({
     from: 'Bechan & Ethan <partytime@bechanandethan.wedding>',
-    replyTo: 'eharbinson966@gmail.com',
+    replyTo: CONTACT_EMAIL,
     to: email,
     subject: "Don't forget to RSVP — Bechan & Ethan, 12 June 2027",
     text: [
@@ -46,6 +47,8 @@ export async function POST(request: NextRequest) {
       '',
       "Can't wait to celebrate with you,",
       'Bechan & Ethan',
+      '',
+      `Questions? Reply to this email or write to us at ${CONTACT_EMAIL}`,
     ].join('\n'),
   })
 
