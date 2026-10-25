@@ -641,9 +641,32 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
   }
 
   function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) { movePaddle(e.clientX) }
-  function handleTouchMove(e: React.TouchEvent<HTMLCanvasElement>) {
-    e.preventDefault(); movePaddle(e.touches[0].clientX)
-  }
+
+  // Touch has to be wired up natively rather than through onTouchStart/onTouchMove.
+  // React registers those two at the root as *passive* listeners, so calling
+  // preventDefault() from a React handler is silently ignored. With nothing
+  // cancelling the gesture, iOS Safari ran its own instead: dragging the paddle
+  // along the bottom of the screen rubber-banded the page and tripped
+  // pull-to-refresh, reloading the game mid-play. Non-passive listeners make
+  // preventDefault() stick, and touch-action on the canvas tells Safari there is
+  // no pan or zoom gesture to start there in the first place.
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    function onTouch(e: TouchEvent) {
+      if (e.cancelable) e.preventDefault()
+      const touch = e.touches[0]
+      if (touch) movePaddle(touch.clientX)
+    }
+
+    canvas.addEventListener('touchstart', onTouch, { passive: false })
+    canvas.addEventListener('touchmove', onTouch, { passive: false })
+    return () => {
+      canvas.removeEventListener('touchstart', onTouch)
+      canvas.removeEventListener('touchmove', onTouch)
+    }
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Actions ────────────────────────────────────────────────────────────────
   function startGame() {
@@ -729,10 +752,14 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
           ref={canvasRef}
           width={W} height={H}
           className="block"
-          style={{ width: W, height: H, imageRendering: 'pixelated', cursor: phase === 'playing' ? 'none' : 'default' }}
+          style={{
+            width: W,
+            height: H,
+            imageRendering: 'pixelated',
+            cursor: phase === 'playing' ? 'none' : 'default',
+            touchAction: 'none',
+          }}
           onMouseMove={handleMouseMove}
-          onTouchMove={handleTouchMove}
-          onTouchStart={e => e.preventDefault()}
         />
 
         {/* Idle overlay — attract screen */}
