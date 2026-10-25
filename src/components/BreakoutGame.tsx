@@ -17,6 +17,13 @@ const PADDLE_W = 70
 const PADDLE_H = 10
 const PADDLE_Y = H - 18
 const INIT_SPEED = 5
+// Widest deflection off the paddle, measured from straight up. Keeping it well
+// short of 90° is what guarantees the ball always retains vertical travel.
+const MAX_BOUNCE_RAD = (60 * Math.PI) / 180
+// Floor on how shallow the ball's path may get, as a fraction of its speed.
+// A ball with no vertical travel can never reach a brick, the paddle or the
+// floor, so the game sits there until the player gives up and restarts.
+const MIN_VY_RATIO = 0.25
 
 const PADDLE_EFFECT_MS = 10000
 const WIDEN_FACTOR = 1.5
@@ -443,6 +450,16 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
       }
 
       // Physics
+      // Before moving, pull the ball out of any near-horizontal path. The
+      // paddle bounce below can no longer create one, but this keeps the
+      // "always has somewhere to go" invariant true no matter what else
+      // touches the velocity.
+      const spd0 = Math.hypot(s.bvx, s.bvy)
+      if (spd0 > 0 && Math.abs(s.bvy) < spd0 * MIN_VY_RATIO) {
+        s.bvy = (s.bvy < 0 ? -1 : 1) * spd0 * MIN_VY_RATIO
+        s.bvx = (s.bvx < 0 ? -1 : 1) * Math.sqrt(Math.max(0, spd0 * spd0 - s.bvy * s.bvy))
+      }
+
       s.bx += s.bvx; s.by += s.bvy
       if (s.bx - BALL_R < 0)  { s.bx = BALL_R;      s.bvx =  Math.abs(s.bvx) }
       if (s.bx + BALL_R > W)  { s.bx = W - BALL_R;  s.bvx = -Math.abs(s.bvx) }
@@ -455,10 +472,18 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
       if (s.bvy > 0 && s.by + BALL_R >= PADDLE_Y && s.by - BALL_R <= PADDLE_Y + PADDLE_H &&
           s.bx + BALL_R >= s.px && s.bx - BALL_R <= s.px + s.paddleW) {
         s.by = PADDLE_Y - BALL_R
-        const rel = (s.bx - (s.px + s.paddleW / 2)) / (s.paddleW / 2)
+        // Deflect by angle instead of setting bvx and solving for bvy. The old
+        // version derived bvy with a sqrt, which collapsed to exactly 0 as soon
+        // as |rel| * 0.8 passed 1. That was reachable: the hit test allows the
+        // ball to overlap the paddle by its radius, so rel maxes out at
+        // 1 + 2 * BALL_R / paddleW, which is 1.4 on a shrunk paddle. Clipping
+        // the very edge of a shrunk paddle therefore sent the ball off dead
+        // horizontally, bouncing wall to wall forever with no way back.
+        const rel = clamp((s.bx - (s.px + s.paddleW / 2)) / (s.paddleW / 2), -1, 1)
         const speed = Math.hypot(s.bvx, s.bvy)
-        s.bvx = rel * speed * 0.8
-        s.bvy = -Math.sqrt(Math.max(0, speed * speed - s.bvx * s.bvx))
+        const bounce = rel * MAX_BOUNCE_RAD
+        s.bvx = Math.sin(bounce) * speed
+        s.bvy = -Math.cos(bounce) * speed
       }
 
       // Spawn a new falling item at a random point along the top on a timer
@@ -734,6 +759,13 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  // Personal best shown in the controls bar. Prefer the server's figure: it is
+  // keyed to the invite, so it follows a guest between their phone and laptop,
+  // and it can't show someone else's score the way localStorage does when two
+  // guests play on the same handset. The local copy is only a fallback for the
+  // case where there is no invite to attribute a score to.
+  const personalBest = invite ? (leaderboard?.myScore ?? 0) : hiScore
+
   return (
     <div ref={outerRef} className="w-full h-full flex items-center justify-center overflow-hidden">
     <div
@@ -836,7 +868,7 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
             <span className="text-[#E07B5A]">{Array.from({ length: lives }, () => '♥').join(' ')}</span>
           )}
           <span>SCORE: {phase === 'playing' ? stateRef.current.score : score}</span>
-          {hiScore > 0 && <span className="text-[var(--color-muted)]">HI: {hiScore}</span>}
+          {personalBest > 0 && <span className="text-[var(--color-muted)]">HI: {personalBest}</span>}
         </div>
         <button onClick={startGame}
           className="font-[family-name:var(--font-vt323)] text-sm px-3 py-1 tracking-widest text-[var(--color-primary)] cursor-pointer"
