@@ -324,6 +324,12 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
   const floatTextsRef = useRef<FloatText[]>([])
   const startTimeRef = useRef<number>(0)
   const pausedRef    = useRef(false)
+  // Last score pushed into React state, so the loop can re-render the readout
+  // when the number actually changes rather than on every frame.
+  const shownScoreRef = useRef(0)
+  // Photo + remaining bricks, pre-composited once and blitted each frame.
+  const bgRef      = useRef<HTMLCanvasElement | null>(null)
+  const bgDirtyRef = useRef(true)
 
   const [phase, setPhase]       = useState<Phase>('idle')
   const [lives, setLives]       = useState(3)
@@ -436,6 +442,35 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
     if (!imgRef.current || imgRef.current.src !== window.location.origin + photoSrc) {
       const img = new Image(); img.src = photoSrc; imgRef.current = img
     }
+    bgDirtyRef.current = true  // new photo and/or a re-entered loop
+
+    // The photo and the 80 bricks were both redrawn from scratch every frame:
+    // a scaling drawImage plus roughly 400 fillRect calls, 60 times a second,
+    // to produce a picture that only changes when a brick breaks. Compositing
+    // them once into an offscreen canvas turns all of that into a single 1:1
+    // blit, and the work only repeats when the bricks actually change.
+    function buildBackdrop(s: GameState): HTMLCanvasElement {
+      let bg = bgRef.current
+      if (!bg) {
+        bg = document.createElement('canvas')
+        bg.width = W; bg.height = H
+        bgRef.current = bg
+      }
+      if (!bgDirtyRef.current) return bg
+
+      const bctx = bg.getContext('2d')
+      if (!bctx) return bg
+      bctx.imageSmoothingEnabled = false
+      bctx.clearRect(0, 0, W, H)
+      bctx.fillStyle = '#111827'; bctx.fillRect(0, 0, W, H)
+      const photoReady = !!imgRef.current?.complete
+      if (photoReady) drawPhotoCover(bctx, imgRef.current!)
+      drawBricks(bctx, s.bricks)
+      // Stay dirty until the photo is actually decoded, so the first few frames
+      // rebuild rather than caching a backdrop with no picture in it.
+      bgDirtyRef.current = !photoReady
+      return bg
+    }
 
     function loop() {
       if (!ctx) return
@@ -536,6 +571,7 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
               s.by + BALL_R < bT || s.by - BALL_R > bB) continue
 
           s.bricks[row][col] = false
+          bgDirtyRef.current = true  // backdrop must be recomposited
           s.score += 10
           s.broken++
           spawnBrickParticles(particlesRef.current, bL + BRICK_W / 2, bT + BRICK_H / 2, ROW_COLORS[row])
@@ -561,12 +597,20 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
         }
       }
 
+      // Keep the SCORE readout in step with play. It used to render
+      // stateRef.current.score, but mutating a ref doesn't re-render, so the
+      // number only moved when some *other* state change happened to trigger
+      // one — which is why power-up catches and most brick hits didn't show.
+      // Publishing on change costs a render per scoring event, not per frame.
+      if (s.score !== shownScoreRef.current) {
+        shownScoreRef.current = s.score
+        setScore(s.score)
+      }
+
       // Render
       ctx.imageSmoothingEnabled = false
       ctx.clearRect(0, 0, W, H)
-      ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, W, H)
-      if (imgRef.current?.complete) drawPhotoCover(ctx, imgRef.current)
-      drawBricks(ctx, s.bricks)
+      ctx.drawImage(buildBackdrop(s), 0, 0)
       drawFallingItems(ctx, s.fallingItems, now)
       ctx.fillStyle = now < s.paddleEffectUntil ? (s.paddleW > PADDLE_W ? POWER_COLOR : DEBUFF_COLOR) : '#FAF4C6'
       ctx.fillRect(s.px, PADDLE_Y, s.paddleW, PADDLE_H)
@@ -699,6 +743,8 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
     stateRef.current = initState()
     particlesRef.current = []
     floatTextsRef.current = []
+    shownScoreRef.current = 0
+    bgDirtyRef.current = true  // fresh wall of bricks, and usually a new photo
     startTimeRef.current = performance.now()
     setIsNewHiScore(false)
     setEndRank(null)
@@ -867,7 +913,7 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
           {phase === 'playing' && (
             <span className="text-[#E07B5A]">{Array.from({ length: lives }, () => '♥').join(' ')}</span>
           )}
-          <span>SCORE: {phase === 'playing' ? stateRef.current.score : score}</span>
+          <span>SCORE: {score}</span>
           {personalBest > 0 && <span className="text-[var(--color-muted)]">HI: {personalBest}</span>}
         </div>
         <button onClick={startGame}
