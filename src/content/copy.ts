@@ -52,11 +52,9 @@ export const COPY = {
     title: `Let us know if you can make it!`,
 
     saturday: `
-      You can read the exact details in the [itinerary], but the big day, which
-      is hopefully already on your calendar, is on
+      You can read the exact details in the [itinerary], but the big day is on
       *Saturday 12th June at Deer Park Country House, Honiton, starting at 1:30pm*.
-      That'll be the main ceremony followed by the reception, wedding breakfast,
-      dancing, the whole shebang.
+      That'll be the main ceremony followed by the whole shebang.
     `,
 
     friday: `
@@ -64,7 +62,7 @@ export const COPY = {
       before, *5pm Friday 11th June, at St Andrew's Church in Broadhembury
       village*. You are welcome to join us if you are in the area (and want to
       watch us get married twice!). We will be having drinks and some food at
-      the Drewe Arms after the church ceremony. The Drewe Arms is not only a
+      the Drewe Arms after the ceremony. The Drewe Arms is not only a
       30 second walk away from the church, but our panel of incredibly biased
       judges do regard it as the best pub in Devon, and possibly the World.
     `,
@@ -86,12 +84,12 @@ export const COPY = {
     `,
 
     closing: `
-      If you can make it we can't wait to welcome you to Devon!
+      We can't wait to welcome you to Devon!
     `,
 
     // Shown above the room yes/no toggles, only for guests who have a room
     roomsIntro: `
-      You lucky ducks! We have limited rooms at Deer Park for the Saturday
+      You lucky things! We have limited rooms at Deer Park for the Saturday
       night but we love you so much / want you to stay up late so we
       prioritised giving you a room. Please brag loudly at the wedding about
       how much better you are than the other guests and how much more we like
@@ -174,10 +172,9 @@ export const COPY = {
     `,
 
     alsoWorthALook: `
-      There are plenty of Airbnbs dotted around the area if you'd prefer
-      somewhere more independent, and if you'd rather stay somewhere bigger,
-      Exeter and Taunton are the nearest larger towns with a wider range of
-      places to stay.
+      There are plenty of Airbnbs dotted around the area if you'd prefer, and
+      if you'd rather stay somewhere bigger, Exeter and Taunton are the nearest
+      larger towns with a wider range of places to stay.
     `,
 
     // The list of other places to stay. Price is just £, ££ or £££.
@@ -189,7 +186,7 @@ export const COPY = {
         mapQuery: `The Pig at Combe, Gittisham, Honiton`,
         description: `
           The boujee option, and a very short drive from Deer Park. Beautiful
-          grounds and a fantastic restaurant, worth the splurge. Note they
+          grounds and a fantastic restaurant. Note they
           require a minimum 2-night stay on weekends.
         `,
       },
@@ -280,7 +277,7 @@ export const COPY = {
       // Address comes from the database, so this is only the fallback wording
       locationFallback: `Bechan's family home, Broadhembury`,
       events: [
-        { time: `11:00am`, event: `BBQ brunch, pool time, and (possibly) a hog roast` },
+        { time: `11:00am`, event: `BBQ brunch and pool time` },
       ],
     },
   },
@@ -293,9 +290,9 @@ export const COPY = {
 
     britainTrains: `
       The nearest and easiest train station to the events is Tiverton Parkway,
-      but there's also Honiton and Cranbrook. For Londoners, your best bet if
-      you're not driving is the London Paddington trains to Tiverton Parkway
-      and a taxi from there to proceedings.
+      but there's also Honiton. For Londoners, your best bet if
+      you're not driving is the Paddington train to Tiverton Parkway
+      and a taxi from there.
     `,
 
     britainWales: `
@@ -357,10 +354,8 @@ export const COPY = {
           For most of you, Bechan (and occasionally Ethan) has almost certainly
           turned up to one of your events wearing something completely
           ridiculous, but normally pretty cool, so take this as your opportunity
-          to return the favour. Get those crazy colours or patterns out that
-          you've never had the right occasion for otherwise. Bonus points to the
-          men attending for coloured suits, funky ties or cravats. Btw Bechan
-          doesn't care if you wear white. Not a joke.
+          to return the favour. Btw Bechan doesn't care if you wear white. Not
+          a joke.
         `,
       },
       {
@@ -388,9 +383,9 @@ export const COPY = {
         q: `What shoes should I wear?`,
         a: `
           Bechan will be wearing the most ridiculous high heels ever conceived
-          by mankind (cool), but naturally as it's the Devon countryside, flat solid
-          ground is by no means a guarantee. We'd recommend taking a pair of
-          flats as a back up for the wobbly bits.
+          by mankind (cool), but naturally as it's the Devon countryside, flat
+          solid ground is by no means a guarantee. We'd recommend taking a pair
+          of flats as a back up for the wobbly bits.
         `,
       },
       {
@@ -403,7 +398,7 @@ export const COPY = {
         `,
       },
       {
-        q: `Can I take my kids?`,
+        q: `Can I bring my kids?`,
         a: `
           Apologies to be a pain, but we're going adults only for this one. If
           you're able to wrangle grandparents or babysitters, we hope that allows
@@ -425,10 +420,9 @@ export const COPY = {
         q: `I'm also a weird basement dweller computer guy, how did you make the website?`,
         a: `
           Built with Next.js (React), Tailwind CSS and Supabase for the database,
-          hosted on Vercel. The whole retro desktop look is a deliberate homage
-          to (okay, fairly blatant rip off of) the Windows 95 UI. If you want to
-          see exactly how questionable the code is, it's public on GitHub at
-          [github].
+          hosted on Vercel. The whole retro desktop look is a half homage half
+          rip off of the Windows 95 UI. You can steal my dodgy code if you want
+          from the public GitHub repo at [github].
         `,
       },
     ],
