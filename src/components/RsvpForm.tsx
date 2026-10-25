@@ -284,8 +284,8 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
                     {g.first_name.toUpperCase()} {g.last_name.toUpperCase()}
                   </div>
                 )}
-                <StatusLine label="Saturday 12th June — Deer Park" value={guestStates[g.id]?.attending_saturday ?? null} />
                 <StatusLine label="Friday 11th June — St Andrew's Church" value={guestStates[g.id]?.attending_friday ?? null} />
+                <StatusLine label="Saturday 12th June — Deer Park" value={guestStates[g.id]?.attending_saturday ?? null} />
                 <StatusLine label="Sunday 13th June — BBQ brunch" value={guestStates[g.id]?.attending_sunday ?? null} />
                 {guestStates[g.id]?.dietary && (
                   <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">
@@ -341,14 +341,14 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
                   </div>
                 )}
                 <YesNo
-                  label={COPY.rsvp.saturdayQuestion}
-                  value={guestStates[g.id]?.attending_saturday ?? null}
-                  onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_saturday: v } }))}
-                />
-                <YesNo
                   label={COPY.rsvp.fridayQuestion}
                   value={guestStates[g.id]?.attending_friday ?? null}
                   onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_friday: v } }))}
+                />
+                <YesNo
+                  label={COPY.rsvp.saturdayQuestion}
+                  value={guestStates[g.id]?.attending_saturday ?? null}
+                  onChange={v => setGuestStates(s => ({ ...s, [g.id]: { ...s[g.id], attending_saturday: v } }))}
                 />
                 <YesNo
                   label={COPY.rsvp.sundayQuestion}

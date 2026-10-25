@@ -58,8 +58,8 @@ function guestBlock(g: RsvpEmailGuest, showName: boolean): string {
     ? `<div style="font-family:'Courier New',Courier,monospace;font-size:11px;letter-spacing:1px;color:${COLORS.muted};margin-top:3px;">DIETARY: ${esc(g.dietary)}</div>`
     : ''
   return `${name}<table role="presentation" width="100%" style="border-collapse:collapse;">
-    ${statusRow('Saturday 12th June — Deer Park', g.attending_saturday)}
     ${statusRow("Friday 11th June — St Andrew's Church", g.attending_friday)}
+    ${statusRow('Saturday 12th June — Deer Park', g.attending_saturday)}
     ${statusRow('Sunday 13th June — BBQ brunch', g.attending_sunday)}
   </table>${dietary}`
 }
@@ -140,8 +140,8 @@ export function buildRsvpEmail(opts: RsvpEmailOpts): { subject: string; html: st
     '',
     ...guests.flatMap(g => [
       showNames ? `${g.first_name.toUpperCase()} ${g.last_name.toUpperCase()}` : null,
-      `  Saturday 12th June — Deer Park: ${g.attending_saturday === null ? 'not answered' : g.attending_saturday ? 'yes' : 'no'}`,
       `  Friday 11th June — St Andrew's Church: ${g.attending_friday === null ? 'not answered' : g.attending_friday ? 'yes' : 'no'}`,
+      `  Saturday 12th June — Deer Park: ${g.attending_saturday === null ? 'not answered' : g.attending_saturday ? 'yes' : 'no'}`,
       `  Sunday 13th June — BBQ brunch: ${g.attending_sunday === null ? 'not answered' : g.attending_sunday ? 'yes' : 'no'}`,
       g.dietary ? `  Dietary: ${g.dietary}` : null,
       '',
