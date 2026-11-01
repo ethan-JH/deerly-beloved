@@ -17,6 +17,21 @@ const PADDLE_W = 70
 const PADDLE_H = 10
 const PADDLE_Y = H - 18
 const INIT_SPEED = 5
+// Every speed below is expressed in pixels per frame at REF_FPS, and the loop
+// scales them by how long the frame actually took. Without that, motion ran at
+// the display's refresh rate: a 120Hz Pixel played at twice the speed of a
+// 60Hz iPhone 15, and a ProMotion iPhone landed somewhere in between.
+// 120 is the calibration point because that is the device the speed was tuned
+// on and liked. Drop it to 60 to halve the difficulty across the board.
+const REF_FPS = 120
+const REF_FRAME_MS = 1000 / REF_FPS
+// Ceiling on a single frame's worth of catch-up. A long frame (tab wake, GC
+// pause, a slow phone) would otherwise advance the ball far enough to skip
+// clean through a brick or the paddle. At 2 the ball moves at most 16px per
+// frame, against a 24px paddle band and 40px of brick clearance, so every
+// collision is still tested. The cost is that sub-60fps devices run slow
+// rather than teleporting, which is the right way round.
+const MAX_STEP = 2
 // Widest deflection off the paddle, measured from straight up. Keeping it well
 // short of 90° is what guarantees the ball always retains vertical travel.
 const MAX_BOUNCE_RAD = (60 * Math.PI) / 180
@@ -260,10 +275,10 @@ function drawFallingItems(ctx: CanvasRenderingContext2D, items: FallingItem[], n
   }
 }
 
-function drawFloatTexts(ctx: CanvasRenderingContext2D, texts: FloatText[]) {
+function drawFloatTexts(ctx: CanvasRenderingContext2D, texts: FloatText[], step: number) {
   for (let i = texts.length - 1; i >= 0; i--) {
     const t = texts[i]
-    t.y -= 0.6; t.life--
+    t.y -= 0.6 * step; t.life -= step
     if (t.life <= 0) { texts.splice(i, 1); continue }
     ctx.globalAlpha = Math.min(1, t.life / (t.maxLife * 0.4))
     ctx.fillStyle = t.color
@@ -302,10 +317,10 @@ function spawnMilestoneBurst(particles: Particle[]) {
   }
 }
 
-function drawParticles(ctx: CanvasRenderingContext2D, particles: Particle[]) {
+function drawParticles(ctx: CanvasRenderingContext2D, particles: Particle[], step: number) {
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]
-    p.x += p.vx; p.y += p.vy; p.vy += 0.06; p.life--
+    p.x += p.vx * step; p.y += p.vy * step; p.vy += 0.06 * step; p.life -= step
     if (p.life <= 0) { particles.splice(i, 1); continue }
     ctx.globalAlpha = p.life / p.maxLife
     ctx.fillStyle = p.color
@@ -472,11 +487,21 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
       return bg
     }
 
+    let lastFrame = performance.now()
+
     function loop() {
       if (!ctx) return
-      if (pausedRef.current) { rafRef.current = requestAnimationFrame(loop); return }
-      const s = stateRef.current
       const now = performance.now()
+      if (pausedRef.current) {
+        // Keep the clock current, or unpausing hands the next frame a step
+        // worth however long the player was away.
+        lastFrame = now
+        rafRef.current = requestAnimationFrame(loop)
+        return
+      }
+      const s = stateRef.current
+      const step = Math.min((now - lastFrame) / REF_FRAME_MS, MAX_STEP)
+      lastFrame = now
 
       // Paddle widen/shrink effect expiry
       if (s.paddleW !== PADDLE_W && now > s.paddleEffectUntil) {
@@ -495,7 +520,7 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
         s.bvx = (s.bvx < 0 ? -1 : 1) * Math.sqrt(Math.max(0, spd0 * spd0 - s.bvy * s.bvy))
       }
 
-      s.bx += s.bvx; s.by += s.bvy
+      s.bx += s.bvx * step; s.by += s.bvy * step
       if (s.bx - BALL_R < 0)  { s.bx = BALL_R;      s.bvx =  Math.abs(s.bvx) }
       if (s.bx + BALL_R > W)  { s.bx = W - BALL_R;  s.bvx = -Math.abs(s.bvx) }
       if (s.by - BALL_R < 0)  {
@@ -537,7 +562,7 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
       // Falling items — drift down, catch with paddle, or miss
       for (let i = s.fallingItems.length - 1; i >= 0; i--) {
         const item = s.fallingItems[i]
-        item.y += FALL_SPEED
+        item.y += FALL_SPEED * step
         if (item.y + ITEM_R >= PADDLE_Y && item.y - ITEM_R <= PADDLE_Y + PADDLE_H &&
             item.x + ITEM_R >= s.px && item.x - ITEM_R <= s.px + s.paddleW) {
           if (item.type === 'pierce') s.piercing = true
@@ -618,8 +643,8 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
       ctx.beginPath(); ctx.arc(s.bx, s.by, BALL_R, 0, Math.PI * 2)
       ctx.fillStyle = s.piercing ? POWER_COLOR : '#1760B0'; ctx.fill()
       ctx.strokeStyle = '#FAF4C6'; ctx.lineWidth = 1.5; ctx.stroke()
-      drawParticles(ctx, particlesRef.current)
-      drawFloatTexts(ctx, floatTextsRef.current)
+      drawParticles(ctx, particlesRef.current, step)
+      drawFloatTexts(ctx, floatTextsRef.current, step)
       if (now < s.flashUntil) {
         ctx.fillStyle = `rgba(255,255,255,${0.5 * (s.flashUntil - now) / FLASH_MS})`
         ctx.fillRect(0, 0, W, H)
@@ -675,14 +700,24 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
     const canvas = canvasRef.current; if (!canvas) return
     const ctx = canvas.getContext('2d'); if (!ctx) return
     const particles: Particle[] = []
-    let tick = 0, raf = 0
+    let raf = 0
+    let lastFrame = performance.now()
+    // Bursts were launched every 28th frame, so they also doubled in rate on a
+    // 120Hz screen. Same reference point as the game loop: one every 28 frames
+    // at REF_FPS, now measured in milliseconds.
+    const BURST_MS = 28 * REF_FRAME_MS
+    let nextBurstAt = 0
     function loop() {
+      const now = performance.now()
+      const step = Math.min((now - lastFrame) / REF_FRAME_MS, MAX_STEP)
+      lastFrame = now
       ctx!.imageSmoothingEnabled = false
       ctx!.clearRect(0, 0, W, H)
       ctx!.fillStyle = '#111827'; ctx!.fillRect(0, 0, W, H)
       if (imgRef.current?.complete) drawPhotoCover(ctx!, imgRef.current)
       ctx!.fillStyle = 'rgba(13,31,60,0.45)'; ctx!.fillRect(0, 0, W, H)
-      if (tick % 28 === 0) {
+      if (now >= nextBurstAt) {
+        nextBurstAt = now + BURST_MS
         const x = 40 + Math.random() * (W - 80)
         const y = 30 + Math.random() * (H * 0.6)
         const color = FIREWORK_COLORS[Math.floor(Math.random() * FIREWORK_COLORS.length)]
@@ -692,8 +727,7 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
           particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, color, size: 2 + Math.floor(Math.random() * 3), life: 35 + Math.floor(Math.random() * 25), maxLife: 60 })
         }
       }
-      drawParticles(ctx!, particles)
-      tick++
+      drawParticles(ctx!, particles, step)
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
