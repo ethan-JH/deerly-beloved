@@ -192,3 +192,88 @@ export function buildRsvpEmail(opts: RsvpEmailOpts): { subject: string; html: st
 
   return { subject, html, text }
 }
+
+// ── Alert to us ───────────────────────────────────────────────────────────────
+
+export interface AdminRsvpEmailOpts {
+  displayName: string
+  isUpdate: boolean
+  guests: RsvpEmailGuest[]
+  roomCounts: Record<string, number>
+  roomAccepted: Record<string, (boolean | null)[]>
+  roomShareWith: string | null
+  // Address on the invite, or null when they didn't leave one
+  guestEmail: string | null
+  adminUrl: string
+}
+
+/**
+ * The heads-up we get when someone RSVPs, as opposed to the confirmation the
+ * guest gets. Deliberately plainer: the subject carries the headline numbers so
+ * it reads off a phone's lock screen without opening anything, and the body is
+ * the same guest and room blocks as the guest email so the two can't disagree.
+ */
+export function buildAdminRsvpEmail(opts: AdminRsvpEmailOpts): { subject: string; html: string; text: string } {
+  const { displayName, isUpdate, guests, roomCounts, roomAccepted, roomShareWith, guestEmail, adminUrl } = opts
+
+  const sat = guests.filter(g => g.attending_saturday === true).length
+  const fri = guests.filter(g => g.attending_friday === true).length
+  const sun = guests.filter(g => g.attending_sunday === true).length
+  const headline = sat + fri + sun === 0
+    ? 'not coming'
+    : `${sat} Sat, ${fri} Fri, ${sun} Sun`
+
+  const subject = `${isUpdate ? 'RSVP updated' : 'RSVP'}: ${displayName} — ${headline}`
+
+  const guestsHtml = guests.map(g => guestBlock(g, true)).join('')
+  const roomsHtml = roomsBlock(roomCounts, roomAccepted, roomShareWith)
+  const contact = guestEmail
+    ? `<a href="mailto:${esc(guestEmail)}" style="color:${COLORS.primary};">${esc(guestEmail)}</a>`
+    : 'no email on file'
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:24px 16px;background-color:${COLORS.bg};">
+  <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;border-collapse:collapse;">
+    <tr>
+      <td style="background-color:${COLORS.chrome};padding:10px 18px;">
+        <span style="font-family:'Courier New',Courier,monospace;font-size:13px;letter-spacing:3px;color:${COLORS.text};">${isUpdate ? '✉ RSVP UPDATED' : '🍸 NEW RSVP'}</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="background-color:${COLORS.surface};border:1px solid rgba(13,31,60,0.12);padding:24px 22px;">
+        <h1 style="font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:23px;color:${COLORS.primary};margin:0 0 4px;">${esc(displayName)}</h1>
+        <p style="font-family:'Courier New',Courier,monospace;font-size:12px;letter-spacing:1px;color:${COLORS.muted};margin:0 0 6px;">${esc(headline)} &middot; ${contact}</p>
+
+        ${guestsHtml}
+        ${roomsHtml}
+
+        <div style="text-align:center;margin:26px 0 4px;">
+          <a href="${esc(adminUrl)}" style="display:inline-block;background-color:${COLORS.primary};color:${COLORS.bg};font-family:'Courier New',Courier,monospace;font-size:14px;letter-spacing:2px;text-decoration:none;padding:11px 26px;border-radius:2px;">OPEN ADMIN</a>
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
+  const text = [
+    `${isUpdate ? 'RSVP UPDATED' : 'NEW RSVP'}: ${displayName}`,
+    headline,
+    guestEmail ?? 'no email on file',
+    '',
+    ...guests.flatMap(g => [
+      `${g.first_name.toUpperCase()} ${g.last_name.toUpperCase()}`,
+      `  Friday 11th June — St Andrew's Church: ${g.attending_friday === null ? 'not answered' : g.attending_friday ? 'yes' : 'no'}`,
+      `  Saturday 12th June — Deer Park: ${g.attending_saturday === null ? 'not answered' : g.attending_saturday ? 'yes' : 'no'}`,
+      `  Sunday 13th June — BBQ brunch: ${g.attending_sunday === null ? 'not answered' : g.attending_sunday ? 'yes' : 'no'}`,
+      g.dietary ? `  Dietary: ${g.dietary}` : null,
+      '',
+    ].filter((l): l is string => l !== null)),
+    ...roomsText(roomCounts, roomAccepted, roomShareWith),
+    adminUrl,
+  ].join('\n')
+
+  return { subject, html, text }
+}
