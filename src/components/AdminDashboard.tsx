@@ -27,11 +27,16 @@ interface Invite {
   address: string | null
   notes: string | null
   room_counts: Record<string, number>
+  // Invites sharing this id describe ONE physical room between them, so their
+  // room_counts match and must be counted once, not summed.
+  room_share_id: string | null
   friday_invited: boolean
   guests: Guest[]
 }
 
-type InviteFields = Omit<Invite, 'id' | 'guests'>
+// room_share_id is deliberately not editable through the invite form: pairing
+// writes to two invites at once, so it has its own control on the row.
+type InviteFields = Omit<Invite, 'id' | 'guests' | 'room_share_id'>
 
 type NewDraft = InviteFields & { guestNames: { first_name: string; last_name: string }[] }
 
@@ -64,6 +69,17 @@ const BLANK_DRAFT: NewDraft = {
 }
 
 // ── Small helpers ─────────────────────────────────────────────────────────────
+
+// The other invite in a room share, if the pairing is intact. Returns null for
+// a dangling share id, which is what a half-deleted pair would leave behind.
+function sharePartner(invites: Invite[], invite: Invite): Invite | null {
+  if (!invite.room_share_id) return null
+  return invites.find(i => i.id !== invite.id && i.room_share_id === invite.room_share_id) ?? null
+}
+
+function sharePartnerName(invites: Invite[], invite: Invite): string | null {
+  return sharePartner(invites, invite)?.display_name ?? null
+}
 
 function rsvpStatus(invite: Invite): 'done' | 'partial' | 'none' {
   if (invite.guests.length === 0) return 'none'
@@ -216,6 +232,7 @@ export function AdminDashboard() {
   const [loading, setLoading]       = useState(true)
   const [saving, setSaving]         = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [linkingId, setLinkingId]   = useState<string | null>(null)
   const [editingId, setEditingId]   = useState<string | null>(null)
   const [editDraft, setEditDraft]   = useState<InviteFields | null>(null)
   const [addingGuest, setAddingGuest] = useState<string | null>(null)
@@ -252,10 +269,27 @@ export function AdminDashboard() {
   const attendingSat      = allGuests.filter(g => g.attending_saturday === true).length
   const attendingFri      = allGuests.filter(g => g.attending_friday === true).length
   const attendingSun      = allGuests.filter(g => g.attending_sunday === true).length
-  const mainHouseRooms    = invites.reduce((s, i) => s + (i.room_counts?.main_house_double ?? 0), 0)
-  const gardenDblRooms    = invites.reduce((s, i) => s + (i.room_counts?.garden_double ?? 0), 0)
-  const gardenSglRooms    = invites.reduce((s, i) => s + (i.room_counts?.garden_single ?? 0), 0)
-  const treehouseRooms    = invites.reduce((s, i) => s + (i.room_counts?.treehouse ?? 0), 0)
+  // Room totals against capacity. A shared room is one room on two invites that
+  // both carry the same room_counts, so summing straight across would book it
+  // twice and quietly eat two of the fourteen doubles.
+  const roomTotals = (() => {
+    const totals: Record<string, number> = {}
+    const countedShares = new Set<string>()
+    for (const invite of invites) {
+      if (invite.room_share_id) {
+        if (countedShares.has(invite.room_share_id)) continue
+        countedShares.add(invite.room_share_id)
+      }
+      for (const [type, n] of Object.entries(invite.room_counts ?? {})) {
+        totals[type] = (totals[type] ?? 0) + n
+      }
+    }
+    return totals
+  })()
+  const mainHouseRooms    = roomTotals.main_house_double ?? 0
+  const gardenDblRooms    = roomTotals.garden_double ?? 0
+  const gardenSglRooms    = roomTotals.garden_single ?? 0
+  const treehouseRooms    = roomTotals.treehouse ?? 0
   const dietaryGuests     = allGuests.filter(g => g.dietary)
 
   // ── Actions ───────────────────────────────────────────────────────────────
@@ -279,15 +313,69 @@ export function AdminDashboard() {
     setSaving(false)
   }
 
+  function patchInvite(id: string, body: Record<string, unknown>) {
+    return fetch(`/api/admin/invites/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  }
+
   async function saveEdit(id: string) {
     if (!editDraft) return
     setSaving(true)
-    await fetch(`/api/admin/invites/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editDraft),
-    })
+    await patchInvite(id, editDraft)
     setEditingId(null); setEditDraft(null)
+    await load()
+    setSaving(false)
+  }
+
+  // Put two invites in one room. Both sides end up with the same room_counts,
+  // because each guest's RSVP reads its own invite and each answers the room's
+  // yes/no separately — the shared id is what stops the totals counting it
+  // twice. Copying is destructive to the partner's existing rooms, so confirm.
+  async function linkRooms(invite: Invite, partnerId: string) {
+    const partner = invites.find(i => i.id === partnerId)
+    if (!partner) return
+
+    const rooms = Object.entries(invite.room_counts ?? {}).filter(([, n]) => n > 0)
+    if (rooms.length === 0) {
+      alert(`${invite.display_name} has no room to share. Give them one first, then link.`)
+      return
+    }
+    const summary = rooms.map(([t, n]) => `${ROOM_TYPES[t as RoomType]?.shortLabel ?? t}${n > 1 ? ` ×${n}` : ''}`).join(', ')
+    if (!confirm(
+      `Put ${invite.display_name} and ${partner.display_name} in the same room?\n\n` +
+      `${partner.display_name}'s rooms will be replaced with ${invite.display_name}'s (${summary}), ` +
+      `and the pair will count as one room in the totals.`
+    )) return
+
+    setSaving(true)
+    const shareId = crypto.randomUUID()
+    await Promise.all([
+      patchInvite(invite.id,  { room_share_id: shareId }),
+      patchInvite(partner.id, { room_share_id: shareId, room_counts: invite.room_counts }),
+    ])
+    setLinkingId(null)
+    await load()
+    setSaving(false)
+  }
+
+  // Clears both sides. Rooms are left alone: they're now two separate rooms, and
+  // which one to drop is the admin's call, not ours.
+  async function unlinkRooms(invite: Invite) {
+    const partner = sharePartner(invites, invite)
+    if (!confirm(
+      partner
+        ? `Separate ${invite.display_name} and ${partner.display_name}?\n\nBoth keep their rooms, so the totals will go up by one.`
+        : `Clear the room share on ${invite.display_name}?`
+    )) return
+
+    setSaving(true)
+    await Promise.all([
+      patchInvite(invite.id, { room_share_id: null }),
+      ...(partner ? [patchInvite(partner.id, { room_share_id: null })] : []),
+    ])
     await load()
     setSaving(false)
   }
@@ -583,6 +671,12 @@ export function AdminDashboard() {
                     ))
                   }
 
+                  {invite.room_share_id && (
+                    <span className="font-[family-name:var(--font-vt323)] text-xs tracking-widest" style={{ color: '#E07B5A' }}>
+                      🔗 {(sharePartnerName(invites, invite) ?? 'SHARED').toUpperCase()}
+                    </span>
+                  )}
+
                   {invite.email && (
                     <span className="font-[family-name:var(--font-vt323)] text-xs text-[var(--color-muted)] truncate max-w-full hidden sm:block">
                       {invite.email}
@@ -605,6 +699,34 @@ export function AdminDashboard() {
                       setExpandedId(null)
                     }}
                   >EDIT</button>
+
+                  {/* Room sharing. Writes to two invites, so it sits outside
+                      the edit form rather than inside the draft. */}
+                  {invite.room_share_id ? (
+                    <button className={btn} style={{ boxShadow: RAISED }} disabled={saving}
+                      onClick={() => unlinkRooms(invite)}>
+                      🔗 UNLINK
+                    </button>
+                  ) : linkingId === invite.id ? (
+                    <select
+                      autoFocus
+                      className="font-[family-name:var(--font-vt323)] text-xs tracking-widest bg-[var(--color-surface)] text-[var(--color-primary)] px-2 py-1 cursor-pointer"
+                      style={{ boxShadow: RAISED }}
+                      defaultValue=""
+                      onChange={e => { if (e.target.value) linkRooms(invite, e.target.value) }}
+                      onBlur={() => setLinkingId(null)}
+                    >
+                      <option value="">SHARE WITH...</option>
+                      {invites
+                        .filter(i => i.id !== invite.id && !i.room_share_id)
+                        .map(i => <option key={i.id} value={i.id}>{i.display_name}</option>)}
+                    </select>
+                  ) : (
+                    <button className={btn} style={{ boxShadow: RAISED }} disabled={saving}
+                      onClick={() => setLinkingId(invite.id)}>
+                      LINK ROOM
+                    </button>
+                  )}
 
                   {invite.email && status !== 'done' && (
                     <button className={btn} style={{ boxShadow: RAISED }}

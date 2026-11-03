@@ -21,6 +21,9 @@
  *            `the big day is *Saturday 12th June* and we can't wait`
  *     6. [itinerary] turns into a link to the itinerary page. Keep it as is.
  *     7. [github] turns into the link to the code. Keep it as is.
+ *     8. {partner} turns into the name of the guest someone is sharing a room
+ *        with. Only used in sharedRoom below. Keep it exactly as it is, curly
+ *        brackets and all, or that guest's name won't appear.
  *
  *   ABOUT LINE BREAKS
  *     Longer text is split across several lines so you never have to scroll
@@ -96,6 +99,14 @@ export const COPY = {
       you. We've put the price per night of the room beside the input, but if
       you'd rather sort out your own accommodation that's equally no issue.
       Just let us know and we'll give someone else the bragging rights.
+    `,
+
+    // Only shown to guests we've put in a room with someone from a different
+    // invite. {partner} becomes their name.
+    sharedRoom: `
+      Quick note: we've put you down to share this room with *{partner}*. We
+      figured you two wouldn't mind in the slightest, but do give us a shout if
+      you'd rather we sorted something else out.
     `,
 
     // Labels on the yes/no questions (short, so they stay on one line)

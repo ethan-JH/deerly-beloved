@@ -26,6 +26,8 @@ interface RsvpInvite {
   email: string | null
   room_counts: Record<string, number>
   room_accepted: Record<string, (boolean | null)[]>
+  // Display name of the invite sharing this room, when there is one
+  room_share_with: string | null
   friday_invited: boolean
   guests: GuestMember[]
   sunday_venue_address: string | null
@@ -315,6 +317,11 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
           {hasRooms && (
             <div className="space-y-0.5">
               <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-primary)]">ROOMS</div>
+              {invite.room_share_with && (
+                <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">
+                  SHARING WITH: {invite.room_share_with.toUpperCase()}
+                </div>
+              )}
               {assignedRooms.flatMap(([type, count]) => {
                 const info = ROOM_TYPES[type]
                 if (!info) return []
@@ -395,6 +402,11 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
                 <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
                   {renderCopy(COPY.rsvp.roomsIntro)}
                 </p>
+                {invite.room_share_with && (
+                  <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
+                    {renderCopy(COPY.rsvp.sharedRoom.replace('{partner}', invite.room_share_with))}
+                  </p>
+                )}
                 <div className="space-y-1.5">
                   {assignedRooms.flatMap(([type, count]) => {
                     const info = ROOM_TYPES[type]

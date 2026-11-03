@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { getRoomShareName } from '@/lib/room-share'
 
 export async function GET(request: NextRequest) {
   const inviteId = request.cookies.get('guest_session')?.value
@@ -12,13 +13,17 @@ export async function GET(request: NextRequest) {
 
   const { data: invite, error: inviteError } = await db
     .from('invites')
-    .select('id, display_name, email, room_counts, room_accepted, friday_invited')
+    .select('id, display_name, email, room_counts, room_accepted, friday_invited, room_share_id')
     .eq('id', inviteId)
     .single()
 
   if (inviteError || !invite) {
     return NextResponse.json({ error: 'Invite not found' }, { status: 401 })
   }
+
+  // Whoever this invite is sharing a room with. Only their display name is
+  // resolved and sent — never their id or passcode.
+  const room_share_with = await getRoomShareName(db, invite.room_share_id, inviteId)
 
   const { data: guests } = await db
     .from('guests')
@@ -35,6 +40,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     ...invite,
+    room_share_with,
     guests: guests ?? [],
     sunday_venue_short: configMap.sunday_venue_short ?? null,
     sunday_venue_address: configMap.sunday_venue_address ?? null,

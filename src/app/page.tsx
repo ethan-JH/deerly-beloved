@@ -39,6 +39,8 @@ interface InviteData {
   email: string | null
   room_counts: Record<string, number>
   room_accepted: Record<string, (boolean | null)[]>
+  // Display name of the invite sharing this room, when there is one
+  room_share_with: string | null
   friday_invited: boolean
   guests: GuestMember[]
   sunday_venue_short: string | null

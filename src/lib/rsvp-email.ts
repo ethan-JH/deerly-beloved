@@ -38,7 +38,21 @@ export interface RsvpEmailOpts {
   guests: RsvpEmailGuest[]
   roomCounts: Record<string, number>
   roomAccepted: Record<string, (boolean | null)[]>
+  // Display name of the invite sharing this room, when there is one
+  roomShareWith: string | null
   siteUrl: string
+}
+
+// "Garden Double — £150 per night" plus "(sharing with Sam)" where it applies.
+// Shared by the HTML and plaintext room lists so they can't drift.
+function roomLabel(
+  type: string, count: number, index: number, shareWith: string | null,
+): string | null {
+  const info = ROOM_TYPES[type]
+  if (!info) return null
+  const nth = count > 1 ? ` #${index + 1}` : ''
+  const shared = shareWith ? ` (sharing with ${shareWith})` : ''
+  return `${info.label}${nth} — ${info.price}${shared}`
 }
 
 function statusRow(label: string, value: boolean | null): string {
@@ -64,24 +78,46 @@ function guestBlock(g: RsvpEmailGuest, showName: boolean): string {
   </table>${dietary}`
 }
 
-function roomsBlock(roomCounts: Record<string, number>, roomAccepted: Record<string, (boolean | null)[]>): string {
+function roomsBlock(
+  roomCounts: Record<string, number>,
+  roomAccepted: Record<string, (boolean | null)[]>,
+  roomShareWith: string | null,
+): string {
   const rows = Object.entries(roomCounts)
     .filter(([, n]) => n > 0)
-    .flatMap(([type, count]) => {
-      const info = ROOM_TYPES[type]
-      if (!info) return []
-      return Array.from({ length: count }, (_, i) => {
-        const label = `${info.label}${count > 1 ? ` #${i + 1}` : ''} — ${info.price}`
-        return statusRow(label, roomAccepted[type]?.[i] ?? null)
-      })
-    })
+    .flatMap(([type, count]) =>
+      Array.from({ length: count }, (_, i) => {
+        const label = roomLabel(type, count, i, roomShareWith)
+        return label === null ? null : statusRow(label, roomAccepted[type]?.[i] ?? null)
+      }).filter((r): r is string => r !== null)
+    )
   if (rows.length === 0) return ''
   return `<div style="font-family:'Courier New',Courier,monospace;font-size:12px;letter-spacing:2px;color:${COLORS.primary};margin:20px 0 4px;">ROOMS</div>
   <table role="presentation" width="100%" style="border-collapse:collapse;">${rows.join('')}</table>`
 }
 
+// The plaintext half had no rooms section at all, so a text-only client saw no
+// room details and, once sharing existed, no mention of it either.
+function roomsText(
+  roomCounts: Record<string, number>,
+  roomAccepted: Record<string, (boolean | null)[]>,
+  roomShareWith: string | null,
+): string[] {
+  const lines = Object.entries(roomCounts)
+    .filter(([, n]) => n > 0)
+    .flatMap(([type, count]) =>
+      Array.from({ length: count }, (_, i) => {
+        const label = roomLabel(type, count, i, roomShareWith)
+        if (label === null) return null
+        const v = roomAccepted[type]?.[i] ?? null
+        return `  ${label}: ${v === null ? 'not answered' : v ? 'yes' : 'no'}`
+      }).filter((l): l is string => l !== null)
+    )
+  return lines.length === 0 ? [] : ['ROOMS', ...lines, '']
+}
+
 export function buildRsvpEmail(opts: RsvpEmailOpts): { subject: string; html: string; text: string } {
-  const { displayName, isUpdate, guests, roomCounts, roomAccepted, siteUrl } = opts
+  const { displayName, isUpdate, guests, roomCounts, roomAccepted, roomShareWith, siteUrl } = opts
   const showNames = guests.length > 1
 
   const badge = isUpdate ? '✉ RSVP UPDATED' : '🍸 RSVP RECEIVED'
@@ -91,7 +127,7 @@ export function buildRsvpEmail(opts: RsvpEmailOpts): { subject: string; html: st
     : `Hi ${esc(displayName)}, thanks for letting us know. Here's what we've got on file.`
 
   const guestsHtml = guests.map(g => guestBlock(g, showNames)).join('')
-  const roomsHtml = roomsBlock(roomCounts, roomAccepted)
+  const roomsHtml = roomsBlock(roomCounts, roomAccepted, roomShareWith)
 
   const subject = isUpdate
     ? `Your RSVP has been updated, ${displayName}`
@@ -146,6 +182,7 @@ export function buildRsvpEmail(opts: RsvpEmailOpts): { subject: string; html: st
       g.dietary ? `  Dietary: ${g.dietary}` : null,
       '',
     ].filter((l): l is string => l !== null)),
+    ...roomsText(roomCounts, roomAccepted, roomShareWith),
     `View or update your RSVP any time: ${siteUrl}`,
     '',
     'Bechan & Ethan',

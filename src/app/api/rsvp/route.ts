@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { buildRsvpEmail, CONTACT_EMAIL } from '@/lib/rsvp-email'
+import { getRoomShareName } from '@/lib/room-share'
 
 export async function POST(request: NextRequest) {
   const inviteId = request.cookies.get('guest_session')?.value
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
       room_accepted: body.room_accepted ?? {},
     })
     .eq('id', inviteId)
-    .select('display_name, email, room_counts, room_accepted')
+    .select('display_name, email, room_counts, room_accepted, room_share_id')
     .single()
 
   // The RSVP itself is already saved at this point. Email is best-effort: it must
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
         guests: guests ?? [],
         roomCounts: invite.room_counts ?? {},
         roomAccepted: invite.room_accepted ?? {},
+        roomShareWith: await getRoomShareName(db, invite.room_share_id, inviteId),
         siteUrl,
       })
 
