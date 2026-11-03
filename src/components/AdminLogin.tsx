@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Window } from '@/components/Window'
+import { PasscodeField } from '@/components/PasscodeField'
 
 export function AdminLogin() {
   const [password, setPassword] = useState('')
@@ -38,13 +39,12 @@ export function AdminLogin() {
               Enter admin password to continue.
             </p>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <input
-                type="password"
+              <PasscodeField
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="_ _ _ _ _ _"
-                required
-                className="w-full border-2 border-[var(--color-primary)] bg-transparent px-4 py-3 text-center text-xl tracking-[0.5em] outline-none focus:border-[var(--color-accent)] transition-colors text-[var(--color-text)] font-[family-name:var(--font-vt323)]"
+                onChange={setPassword}
+                label="Admin password"
+                placeholder="password"
+                autoFocus
               />
               {error && (
                 <p className="font-[family-name:var(--font-vt323)] text-lg text-[var(--color-accent)]">{error}</p>
