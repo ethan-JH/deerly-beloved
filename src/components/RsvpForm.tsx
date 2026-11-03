@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { COPY } from '@/content/copy'
 import { renderCopy, flow } from '@/content/render'
+import { PLACE_PHOTOS } from '@/lib/place-photos'
 
 const ROOM_TYPES: Record<string, { label: string; price: string }> = {
   main_house_double: { label: 'Main House Double', price: '£150 per night' },
@@ -207,15 +208,30 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
           {renderCopy(COPY.rsvp.saturday, onOpenItinerary)}
         </p>
 
-        <Photo src="/photos/89.jpg" caption="Deer Park Country House" className="max-w-[220px] mx-auto" />
+        <Photo
+          src={PLACE_PHOTOS.deerParkAerial.src}
+          caption={PLACE_PHOTOS.deerParkAerial.label}
+          objectPosition={PLACE_PHOTOS.deerParkAerial.pos}
+          className="max-w-[220px] mx-auto"
+        />
 
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">
           {renderCopy(COPY.rsvp.friday)}
         </p>
 
         <div className="flex gap-3 justify-center">
-          <Photo src="/photos/91.jpg" caption="St Andrew's Church" className="w-[45%]" objectPosition="bottom" />
-          <Photo src="/photos/90.jpg" caption="The Drewe Arms" className="w-[45%]" />
+          <Photo
+            src={PLACE_PHOTOS.stAndrews.src}
+            caption={PLACE_PHOTOS.stAndrews.label}
+            objectPosition={PLACE_PHOTOS.stAndrews.pos}
+            className="w-[45%]"
+          />
+          <Photo
+            src={PLACE_PHOTOS.dreweArms.src}
+            caption={PLACE_PHOTOS.dreweArms.label}
+            objectPosition={PLACE_PHOTOS.dreweArms.pos}
+            className="w-[45%]"
+          />
         </div>
 
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed">

@@ -8,6 +8,7 @@ import { BreakoutGame } from '@/components/BreakoutGame'
 import { RsvpForm } from '@/components/RsvpForm'
 import { COPY } from '@/content/copy'
 import { renderCopy, flow } from '@/content/render'
+import { PLACE_PHOTOS, PLACE_PHOTO_SRCS } from '@/lib/place-photos'
 
 interface WinState {
   id: string
@@ -95,10 +96,6 @@ const WINDOWS_CONFIG = [
 function getWidth(id: string): number {
   return id === 'home' ? 560 : id === 'secret' ? 440 : 480
 }
-
-// Photos shown inside windows. Fetched up front so they're already decoded by the
-// time a window is opened, rather than popping in a beat later.
-const WINDOW_PHOTOS = ['/photos/88.jpg', '/photos/89.jpg', '/photos/90.jpg', '/photos/91.jpg']
 
 // Fixed positions/delays avoid SSR hydration mismatch from Math.random()
 const CONFETTI_PIECES = [
@@ -463,10 +460,10 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
             <div className="relative overflow-hidden rounded" style={{ aspectRatio: '4/3', width: '100%', maxWidth: 280 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/photos/88.jpg"
-                alt="Deer Park Country House"
+                src={PLACE_PHOTOS.deerParkHouse.src}
+                alt={PLACE_PHOTOS.deerParkHouse.label}
                 className="w-full h-full object-cover"
-                style={{ objectPosition: 'center', imageRendering: 'pixelated' }}
+                style={{ objectPosition: PLACE_PHOTOS.deerParkHouse.pos, imageRendering: 'pixelated' }}
               />
               <div
                 className="absolute inset-0 flex flex-col items-center justify-center gap-1"
@@ -514,10 +511,10 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
             <div className="relative" style={{ aspectRatio: '16/9' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/photos/89.jpg"
-                alt="Deer Park Country House"
+                src={PLACE_PHOTOS.deerParkAerial.src}
+                alt={PLACE_PHOTOS.deerParkAerial.label}
                 className="w-full h-full object-cover"
-                style={{ imageRendering: 'pixelated' }}
+                style={{ objectPosition: PLACE_PHOTOS.deerParkAerial.pos, imageRendering: 'pixelated' }}
               />
               <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(13,31,60,0.55)' }}>
                 <span className="font-[family-name:var(--font-vt323)] text-xl tracking-[0.2em] text-[var(--color-bg)] text-center px-4">
@@ -743,7 +740,7 @@ export default function DesktopPage() {
 
   // Warm the cache for in-window photos and taskbar icons while the loading screen runs
   useEffect(() => {
-    const srcs = [...WINDOW_PHOTOS, ...WINDOWS_CONFIG.map((w) => w.icon)]
+    const srcs = [...PLACE_PHOTO_SRCS, ...WINDOWS_CONFIG.map((w) => w.icon)]
     srcs.forEach((src) => { const img = new Image(); img.src = src })
   }, [])
 

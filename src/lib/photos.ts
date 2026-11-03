@@ -1,4 +1,12 @@
-// Run `npm run photos` to regenerate this list from public/photos/raw/
+// The loading screen slideshow and the Breakout backdrop, in rotation order.
+// Photos of specific places shown inside windows are NOT here — they live in
+// place-photos.ts, under public/photos/places/, outside this numbering.
+//
+// Add to this list with `npm run photos -- --append` (never a bare
+// `npm run photos`, which renumbers from 01 and invalidates every pos below).
+// Numbering has gaps where photos were deleted; leave them, because closing
+// them would shift every pos onto the wrong photo.
+//
 // pos: CSS object-position — 'top' | 'center' | 'bottom' | '50% 20%' etc.
 export const PHOTOS: { src: string; pos: string }[] = [
   { src: '/photos/01.jpg', pos: 'right' },
