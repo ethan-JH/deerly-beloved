@@ -51,7 +51,7 @@ const ROOM_TYPES = {
   main_house_double: { label: 'Main House Double', price: '£150 per night' },
   garden_double:     { label: 'Garden Double',      price: '£150 per night' },
   garden_single:     { label: 'Garden Single',      price: '£75 per night'  },
-  treehouse:         { label: 'The Treehouse',       price: 'Bridal Suite'   },
+  treehouse:         { label: 'The Treehouse',       price: '£6967 per night'   },
 } as const
 
 const FALLBACK_POSITIONS: Record<string, { x: number; y: number }> = {
@@ -542,19 +542,33 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
               <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed mb-3">
                 {flow(COPY.stay.reservedIntro)}
               </p>
-              {assignedRooms.map((r, i) => (
-                <div
-                  key={i}
-                  className="flex items-baseline justify-between gap-3 py-1.5 border-t border-[var(--color-text)]/10"
-                >
-                  <span className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-text)]">
-                    {r.label}{r.count > 1 ? ` × ${r.count}` : ''}
-                  </span>
-                  <span className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[var(--color-accent)] shrink-0">
-                    {r.price.toUpperCase()}
-                  </span>
+              {/* The price panel. Loud on purpose: a guest finding out what
+                  the room costs at checkout is the one surprise worth
+                  engineering against. */}
+              <div
+                className="rounded-md px-3 py-2.5 border-l-4"
+                style={{ borderColor: 'var(--color-accent)', background: 'rgba(224,123,90,0.10)' }}
+              >
+                <div className="font-[family-name:var(--font-vt323)] text-[11px] tracking-widest text-[var(--color-accent)] mb-1">
+                  {COPY.stay.rateHeading}
                 </div>
-              ))}
+                {assignedRooms.map((r, i) => (
+                  <div
+                    key={i}
+                    className="flex items-baseline justify-between gap-3 py-1 border-t border-[var(--color-accent)]/20 first:border-0"
+                  >
+                    <span className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-text)] min-w-0">
+                      {r.label}{r.count > 1 ? ` × ${r.count}` : ''}
+                    </span>
+                    <span className="font-[family-name:var(--font-vt323)] text-xl leading-none tracking-wide text-[var(--color-text)] shrink-0">
+                      {r.price.toUpperCase()}
+                    </span>
+                  </div>
+                ))}
+                <p className="crispy font-[family-name:var(--font-playfair)] text-xs text-[var(--color-muted)] leading-snug mt-1.5">
+                  {flow(COPY.stay.rateNote)}
+                </p>
+              </div>
             </div>
           </div>
 

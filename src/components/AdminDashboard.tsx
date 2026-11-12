@@ -54,7 +54,7 @@ const ROOM_TYPES = {
   main_house_double: { label: 'Main House Double', shortLabel: 'MH DBL',    price: '£150/night', capacity: 14 },
   garden_double:     { label: 'Garden Double',      shortLabel: 'GDN DBL',   price: '£150/night', capacity: 14 },
   garden_single:     { label: 'Garden Single',      shortLabel: 'GDN SGL',   price: '£75/night',  capacity: 2  },
-  treehouse:         { label: 'The Treehouse',       shortLabel: 'TREEHOUSE', price: 'Bridal Suite', capacity: 1  },
+  treehouse:         { label: 'The Treehouse',       shortLabel: 'TREEHOUSE', price: '£6967 per night', capacity: 1  },
 } as const
 type RoomType = keyof typeof ROOM_TYPES
 

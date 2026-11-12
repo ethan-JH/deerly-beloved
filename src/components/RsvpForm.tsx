@@ -9,7 +9,7 @@ const ROOM_TYPES: Record<string, { label: string; price: string }> = {
   main_house_double: { label: 'Main House Double', price: '£150 per night' },
   garden_double:     { label: 'Garden Double',      price: '£150 per night' },
   garden_single:     { label: 'Garden Single',      price: '£75 per night'  },
-  treehouse:         { label: 'The Treehouse',       price: 'Bridal Suite'   },
+  treehouse:         { label: 'The Treehouse',       price: '£6967 per night'   },
 }
 
 interface GuestMember {

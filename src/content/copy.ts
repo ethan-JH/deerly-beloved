@@ -172,6 +172,14 @@ export const COPY = {
       The room is yours if you'd like it, just confirm via your RSVP.
     `,
 
+    // Heading and small print on the price panel in the Accommodation window.
+    // Deliberately blunt: nobody should get a surprise at checkout.
+    rateHeading: `WHAT IT COSTS`,
+
+    rateNote: `
+      Per room, per night, breakfast included. You pay Deer Park, not us.
+    `,
+
     elsewhereHeading: `Prefer to stay elsewhere?`,
 
     elsewhereIntro: `No problem at all. A few other options nearby:`,
@@ -260,16 +268,6 @@ export const COPY = {
         mapQuery: `Buckley Farmhouse, Sidmouth, Devon`,
         description: `
           A charming farmhouse B&B with excellent reviews, a little further out.
-        `,
-      },
-      {
-        name: `The White Hart Inn`,
-        price: `££`,
-        tag: `Village inn`,
-        url: null,
-        mapQuery: `The White Hart Inn, Wilmington, Honiton, EX14 9JQ`,
-        description: `
-          A cosy village inn a short drive away, in Wilmington.
         `,
       },
     ],
