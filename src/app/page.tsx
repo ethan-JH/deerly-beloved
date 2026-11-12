@@ -9,6 +9,7 @@ import { RsvpForm } from '@/components/RsvpForm'
 import { COPY } from '@/content/copy'
 import { renderCopy, flow } from '@/content/render'
 import { PLACE_PHOTOS, PLACE_PHOTO_SRCS } from '@/lib/place-photos'
+import { roomInfo } from '@/lib/rooms'
 
 interface WinState {
   id: string
@@ -47,12 +48,7 @@ interface InviteData {
   sunday_venue_address: string | null
 }
 
-const ROOM_TYPES = {
-  main_house_double: { label: 'Main House Double', price: '£150 per night' },
-  garden_double:     { label: 'Garden Double',      price: '£150 per night' },
-  garden_single:     { label: 'Garden Single',      price: '£75 per night'  },
-  treehouse:         { label: 'The Treehouse',       price: '£6967 per night'   },
-} as const
+
 
 const FALLBACK_POSITIONS: Record<string, { x: number; y: number }> = {
   home:      { x: 200, y: 80  },
@@ -510,11 +506,9 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
         .filter(([, n]) => n > 0)
         .map(([type]) => type)
       const assignedRooms = assignedTypes.flatMap(type => {
-        const info = ROOM_TYPES[type as keyof typeof ROOM_TYPES]
+        const info = roomInfo(type)
         return info ? [{ label: info.label as string, price: info.price as string, count: invite!.room_counts[type] }] : []
       })
-      const hasDouble = assignedTypes.some(t => t === 'main_house_double' || t === 'garden_double')
-      const hasSingle = assignedTypes.includes('garden_single')
       return assignedRooms.length > 0 ? (
         <div className="p-8">
           <h2 className="crispy font-[family-name:var(--font-playfair)] italic text-4xl text-[var(--color-primary)] mb-4">{COPY.stay.titleWithRoom}</h2>
@@ -542,41 +536,29 @@ function WindowContent({ id, invite, onOpenWindow }: { id: string; invite: Invit
               <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed mb-3">
                 {flow(COPY.stay.reservedIntro)}
               </p>
-              {/* The price panel. Loud on purpose: a guest finding out what
-                  the room costs at checkout is the one surprise worth
-                  engineering against. */}
-              <div
-                className="rounded-md px-3 py-2.5 border-l-4"
-                style={{ borderColor: 'var(--color-accent)', background: 'rgba(224,123,90,0.10)' }}
-              >
-                <div className="font-[family-name:var(--font-vt323)] text-[11px] tracking-widest text-[var(--color-accent)] mb-1">
-                  {COPY.stay.rateHeading}
+              {/* Room and rate on one line each, same hairline rows as the
+                  rest of the site. The price is simply stated rather than
+                  boxed off, but it is never more than a glance away. */}
+              {assignedRooms.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex items-baseline justify-between gap-3 py-1.5 border-t border-[var(--color-text)]/10"
+                >
+                  <span className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-text)] min-w-0">
+                    {r.label}{r.count > 1 ? ` × ${r.count}` : ''}
+                  </span>
+                  <span className="font-[family-name:var(--font-vt323)] text-base tracking-widest text-[var(--color-accent)] shrink-0">
+                    {r.price.toUpperCase()}
+                  </span>
                 </div>
-                {assignedRooms.map((r, i) => (
-                  <div
-                    key={i}
-                    className="flex items-baseline justify-between gap-3 py-1 border-t border-[var(--color-accent)]/20 first:border-0"
-                  >
-                    <span className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-text)] min-w-0">
-                      {r.label}{r.count > 1 ? ` × ${r.count}` : ''}
-                    </span>
-                    <span className="font-[family-name:var(--font-vt323)] text-xl leading-none tracking-wide text-[var(--color-text)] shrink-0">
-                      {r.price.toUpperCase()}
-                    </span>
-                  </div>
-                ))}
-                <p className="crispy font-[family-name:var(--font-playfair)] text-xs text-[var(--color-muted)] leading-snug mt-1.5">
-                  {flow(COPY.stay.rateNote)}
-                </p>
-              </div>
+              ))}
+              <p className="crispy font-[family-name:var(--font-playfair)] italic text-xs text-[var(--color-muted)] leading-snug mt-2">
+                {flow(COPY.stay.rateNote)}
+              </p>
             </div>
           </div>
 
           <p className="crispy font-[family-name:var(--font-playfair)] text-base text-[var(--color-muted)] leading-relaxed mb-5">
-            {hasDouble && hasSingle ? `${flow(COPY.stay.rateBoth)} `
-              : hasDouble ? `${flow(COPY.stay.rateDouble)} `
-              : hasSingle ? `${flow(COPY.stay.rateSingle)} `
-              : ''}
             {flow(COPY.stay.rateClosing)}
           </p>
 

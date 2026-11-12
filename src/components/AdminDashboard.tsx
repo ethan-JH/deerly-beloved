@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { ROOM_TYPE_ENTRIES, roomInfo, type RoomType } from '@/lib/rooms'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,13 +51,7 @@ interface GuestRsvpDraft {
   rsvp_submitted: boolean
 }
 
-const ROOM_TYPES = {
-  main_house_double: { label: 'Main House Double', shortLabel: 'MH DBL',    price: '£150/night', capacity: 14 },
-  garden_double:     { label: 'Garden Double',      shortLabel: 'GDN DBL',   price: '£150/night', capacity: 14 },
-  garden_single:     { label: 'Garden Single',      shortLabel: 'GDN SGL',   price: '£75/night',  capacity: 2  },
-  treehouse:         { label: 'The Treehouse',       shortLabel: 'TREEHOUSE', price: '£6967 per night', capacity: 1  },
-} as const
-type RoomType = keyof typeof ROOM_TYPES
+
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -173,7 +168,7 @@ function InviteForm({
       <div className="space-y-1">
         <div className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-muted)]">ROOMS</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
-          {(Object.entries(ROOM_TYPES) as [RoomType, typeof ROOM_TYPES[RoomType]][]).map(([type, info]) => {
+          {ROOM_TYPE_ENTRIES.map(([type, info]) => {
             const count = ((draft.room_counts ?? {}) as Record<string, number>)[type] ?? 0
             return (
               <div key={type} className="flex items-center gap-2 py-0.5">
@@ -343,7 +338,7 @@ export function AdminDashboard() {
       alert(`${invite.display_name} has no room to share. Give them one first, then link.`)
       return
     }
-    const summary = rooms.map(([t, n]) => `${ROOM_TYPES[t as RoomType]?.shortLabel ?? t}${n > 1 ? ` ×${n}` : ''}`).join(', ')
+    const summary = rooms.map(([t, n]) => `${roomInfo(t)?.shortLabel ?? t}${n > 1 ? ` ×${n}` : ''}`).join(', ')
     if (!confirm(
       `Put ${invite.display_name} and ${partner.display_name} in the same room?\n\n` +
       `${partner.display_name}'s rooms will be replaced with ${invite.display_name}'s (${summary}), ` +
@@ -666,7 +661,7 @@ export function AdminDashboard() {
                     .filter(([, n]) => n > 0)
                     .map(([type, n]) => (
                       <span key={type} className="font-[family-name:var(--font-vt323)] text-xs tracking-widest" style={{ color: '#1760B0' }}>
-                        🏠 {ROOM_TYPES[type]?.shortLabel ?? type}{n > 1 ? ` ×${n}` : ''}
+                        🏠 {roomInfo(type)?.shortLabel ?? type}{n > 1 ? ` ×${n}` : ''}
                       </span>
                     ))
                   }

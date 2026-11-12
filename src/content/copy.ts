@@ -152,32 +152,17 @@ export const COPY = {
       of Saturday 12th June 2027.
     `,
 
-    rateBoth: `
-      Your rooms are available at the nightly rate of £150.00 (to include
-      breakfast) for the double, and £75.00 (to include breakfast) for the
-      single.
-    `,
-
-    rateDouble: `
-      Your room is available at the nightly rate of £150.00 (to include
-      breakfast).
-    `,
-
-    rateSingle: `
-      Your room is available at the nightly rate of £75.00 (to include
-      breakfast).
+    // The small print under the room prices. The prices themselves are not
+    // written here on purpose: they come from the room list in the code, so
+    // there's no way for this paragraph to end up disagreeing with the figure
+    // shown right above it.
+    rateNote: `
+      Per room, per night, and that includes breakfast. You settle up with
+      Deer Park at checkout, not with us.
     `,
 
     rateClosing: `
       The room is yours if you'd like it, just confirm via your RSVP.
-    `,
-
-    // Heading and small print on the price panel in the Accommodation window.
-    // Deliberately blunt: nobody should get a surprise at checkout.
-    rateHeading: `WHAT IT COSTS`,
-
-    rateNote: `
-      Per room, per night, breakfast included. You pay Deer Park, not us.
     `,
 
     elsewhereHeading: `Prefer to stay elsewhere?`,

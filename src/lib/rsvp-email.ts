@@ -1,9 +1,4 @@
-const ROOM_TYPES: Record<string, { label: string; price: string }> = {
-  main_house_double: { label: 'Main House Double', price: '£150 per night' },
-  garden_double:     { label: 'Garden Double',      price: '£150 per night' },
-  garden_single:     { label: 'Garden Single',      price: '£75 per night'  },
-  treehouse:         { label: 'The Treehouse',       price: '£6967 per night'   },
-}
+import { roomInfo } from '@/lib/rooms'
 
 // Real inbox guests can write to. partytime@ is send-only (Resend receiving is
 // off), so replies work but a fresh email to that address would bounce.
@@ -43,12 +38,12 @@ export interface RsvpEmailOpts {
   siteUrl: string
 }
 
-// "Garden Double — £150 per night" plus "(sharing with Sam)" where it applies.
+// The room name and rate, plus "(sharing with Sam)" where it applies.
 // Shared by the HTML and plaintext room lists so they can't drift.
 function roomLabel(
   type: string, count: number, index: number, shareWith: string | null,
 ): string | null {
-  const info = ROOM_TYPES[type]
+  const info = roomInfo(type)
   if (!info) return null
   const nth = count > 1 ? ` #${index + 1}` : ''
   const shared = shareWith ? ` (sharing with ${shareWith})` : ''

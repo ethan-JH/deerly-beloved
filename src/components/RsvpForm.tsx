@@ -4,13 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { COPY } from '@/content/copy'
 import { renderCopy, flow } from '@/content/render'
 import { PLACE_PHOTOS } from '@/lib/place-photos'
-
-const ROOM_TYPES: Record<string, { label: string; price: string }> = {
-  main_house_double: { label: 'Main House Double', price: '£150 per night' },
-  garden_double:     { label: 'Garden Double',      price: '£150 per night' },
-  garden_single:     { label: 'Garden Single',      price: '£75 per night'  },
-  treehouse:         { label: 'The Treehouse',       price: '£6967 per night'   },
-}
+import { roomInfo } from '@/lib/rooms'
 
 interface GuestMember {
   id: string
@@ -323,7 +317,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
                 </div>
               )}
               {assignedRooms.flatMap(([type, count]) => {
-                const info = ROOM_TYPES[type]
+                const info = roomInfo(type)
                 if (!info) return []
                 return Array.from({ length: count }, (_, i) => (
                   <StatusLine
@@ -409,7 +403,7 @@ export function RsvpForm({ invite, onOpenItinerary }: { invite: RsvpInvite | nul
                 )}
                 <div className="space-y-1.5">
                   {assignedRooms.flatMap(([type, count]) => {
-                    const info = ROOM_TYPES[type]
+                    const info = roomInfo(type)
                     if (!info) return []
                     return Array.from({ length: count }, (_, i) => (
                       <YesNo
