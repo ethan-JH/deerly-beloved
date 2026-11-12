@@ -189,12 +189,15 @@ export const COPY = {
     `,
 
     // The list of other places to stay. Price is just £, ££ or £££.
+    // url is the place's own website, mapQuery is what gets looked up for the
+    // directions link, so keep the address in it accurate.
     options: [
       {
         name: `The Pig at Combe`,
         price: `£££`,
         tag: `The splurge`,
-        mapQuery: `The Pig at Combe, Gittisham, Honiton`,
+        url: `https://www.thepighotel.com/at-combe/`,
+        mapQuery: `The Pig at Combe, Gittisham, Honiton, EX14 3AD`,
         description: `
           The boujee option, and a very short drive from Deer Park. Beautiful
           grounds and a fantastic restaurant. Note they
@@ -202,18 +205,47 @@ export const COPY = {
         `,
       },
       {
-        name: `The Tumbling Weir Hotel`,
+        name: `Greyhound Country Inn`,
+        price: `££`,
+        tag: `Closest to us`,
+        url: `https://www.greyhoundcountryinn.co.uk/`,
+        mapQuery: `Greyhound Country Inn, Fenny Bridges, Honiton, EX14 3BJ`,
+        description: `
+          A big thatched free house with a beer garden, at Fenny Bridges on the
+          old A30 just west of Honiton. That makes it about the nearest of these
+          to Deer Park, and it does ten en-suite rooms above the pub.
+        `,
+      },
+      {
+        name: `The Heathfield Inn`,
         price: `££`,
         tag: `In town`,
-        mapQuery: `The Tumbling Weir Hotel, Ottery St Mary`,
+        // No www: that subdomain 522s, the apex is the one that works
+        url: `https://heathfieldinn.co.uk/`,
+        mapQuery: `The Heathfield Inn, Walnut Road, Honiton, EX14 2UG`,
         description: `
-          A comfortable, mid-range option with a restaurant attached.
+          A 16th century thatched farmhouse on the edge of Honiton with seven
+          rooms, a proper bar and a carvery on Sundays. Handy if you want to be
+          able to walk into town.
+        `,
+      },
+      {
+        name: `Lakeview Manor`,
+        price: `££`,
+        tag: `Country house`,
+        url: `https://www.lakeviewmanor.co.uk/`,
+        mapQuery: `Lakeview Manor, Dunkeswell, Honiton, EX14 4SH`,
+        description: `
+          Out at Dunkeswell in the hills north of Honiton, sat in 45 acres of
+          parkland with two fishing lakes and a restaurant looking over them.
+          Rooms in the house and in converted barns, from around £99 a night.
         `,
       },
       {
         name: `Premier Inn Honiton`,
         price: `£`,
         tag: `Cheap and cheerful`,
+        url: `https://www.premierinn.com/gb/en/hotels/england/devon/honiton/honiton.html`,
         mapQuery: `Premier Inn Honiton`,
         description: `
           Reliable, no-frills, and right in Honiton. The safe bet if you just
@@ -224,7 +256,8 @@ export const COPY = {
         name: `Buckley Farmhouse`,
         price: `££`,
         tag: `Country B&B`,
-        mapQuery: `Buckley Farmhouse, Devon`,
+        url: null,
+        mapQuery: `Buckley Farmhouse, Sidmouth, Devon`,
         description: `
           A charming farmhouse B&B with excellent reviews, a little further out.
         `,
@@ -233,7 +266,8 @@ export const COPY = {
         name: `The White Hart Inn`,
         price: `££`,
         tag: `Village inn`,
-        mapQuery: `The White Hart Inn, Wilmington, Honiton`,
+        url: null,
+        mapQuery: `The White Hart Inn, Wilmington, Honiton, EX14 9JQ`,
         description: `
           A cosy village inn a short drive away, in Wilmington.
         `,

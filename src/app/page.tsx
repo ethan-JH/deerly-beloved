@@ -248,9 +248,9 @@ function TopBar({ clock, invite }: { clock: string | null; invite: InviteData | 
 }
 
 function StayCard({
-  name, price, tag, query, children,
+  name, price, tag, query, url, children,
 }: {
-  name: string; price: string; tag: string; query: string; children: React.ReactNode
+  name: string; price: string; tag: string; query: string; url: string | null; children: React.ReactNode
 }) {
   return (
     <div
@@ -272,7 +272,21 @@ function StayCard({
         <p className="crispy font-[family-name:var(--font-playfair)] text-sm text-[var(--color-muted)] leading-relaxed mt-1 mb-2">
           {children}
         </p>
-        <MapLink query={query} label="VIEW ON MAP" />
+        {/* Their own site for booking, Google Maps for getting there. Some
+            places have no website of their own, so that link is optional. */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          {url && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-[family-name:var(--font-vt323)] text-xs tracking-widest text-[var(--color-primary)] underline underline-offset-2"
+            >
+              🔗 WEBSITE
+            </a>
+          )}
+          <MapLink query={query} label="DIRECTIONS" />
+        </div>
       </div>
     </div>
   )
@@ -282,7 +296,7 @@ function AlternativeAccommodation() {
   return (
     <>
       {COPY.stay.options.map(o => (
-        <StayCard key={o.name} name={o.name} price={o.price} tag={o.tag} query={o.mapQuery}>
+        <StayCard key={o.name} name={o.name} price={o.price} tag={o.tag} query={o.mapQuery} url={o.url}>
           {flow(o.description)}
         </StayCard>
       ))}
