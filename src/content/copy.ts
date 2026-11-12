@@ -157,8 +157,7 @@ export const COPY = {
     // there's no way for this paragraph to end up disagreeing with the figure
     // shown right above it.
     rateNote: `
-      Per room, per night, and that includes breakfast. You settle up with
-      Deer Park at checkout, not with us.
+      Per room, per night, and that includes breakfast.
     `,
 
     rateClosing: `
