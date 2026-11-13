@@ -84,6 +84,62 @@ function rsvpStatus(invite: Invite): 'done' | 'partial' | 'none' {
   return 'none'
 }
 
+// ── Filtering and sorting the invite list ────────────────────────────────────
+
+type InviteFilter = 'all' | 'rsvpd' | 'partial' | 'pending' | 'sat' | 'fri' | 'sun' | 'declined'
+type InviteSort = 'name' | 'recent' | 'status'
+
+type DayKey = 'attending_saturday' | 'attending_friday' | 'attending_sunday'
+
+// An invite counts for a day if ANY of its guests is coming, so a couple where
+// only one makes the Friday still shows up under FRIDAY.
+function attendsDay(invite: Invite, day: DayKey): boolean {
+  return invite.guests.some(g => g[day] === true)
+}
+
+// Everyone has answered and nobody is coming to anything. Distinct from
+// 'pending', which is nobody having answered at all.
+function hasDeclinedAll(invite: Invite): boolean {
+  if (invite.guests.length === 0) return false
+  if (!invite.guests.every(g => g.rsvp_submitted_at)) return false
+  return !attendsDay(invite, 'attending_saturday')
+    && !attendsDay(invite, 'attending_friday')
+    && !attendsDay(invite, 'attending_sunday')
+}
+
+// Most recent answer on the invite, as a timestamp. 0 when nobody has replied,
+// which sorts them to the bottom of a newest-first list.
+function latestRsvpAt(invite: Invite): number {
+  return invite.guests.reduce((latest, g) => {
+    const t = g.rsvp_submitted_at ? Date.parse(g.rsvp_submitted_at) : 0
+    return t > latest ? t : latest
+  }, 0)
+}
+
+function matchesFilter(invite: Invite, filter: InviteFilter): boolean {
+  switch (filter) {
+    case 'all':      return true
+    case 'rsvpd':    return rsvpStatus(invite) === 'done'
+    case 'partial':  return rsvpStatus(invite) === 'partial'
+    case 'pending':  return rsvpStatus(invite) === 'none'
+    case 'sat':      return attendsDay(invite, 'attending_saturday')
+    case 'fri':      return attendsDay(invite, 'attending_friday')
+    case 'sun':      return attendsDay(invite, 'attending_sunday')
+    case 'declined': return hasDeclinedAll(invite)
+  }
+}
+
+const SORTS: Record<InviteSort, (a: Invite, b: Invite) => number> = {
+  name:   (a, b) => a.display_name.localeCompare(b.display_name),
+  recent: (a, b) => latestRsvpAt(b) - latestRsvpAt(a),
+  // Chase-list order: not replied, then half replied, then done.
+  status: (a, b) => {
+    const rank = { none: 0, partial: 1, done: 2 }
+    const d = rank[rsvpStatus(a)] - rank[rsvpStatus(b)]
+    return d !== 0 ? d : a.display_name.localeCompare(b.display_name)
+  },
+}
+
 function RsvpBadge({ status }: { status: 'done' | 'partial' | 'none' }) {
   const cfg = {
     done:    { label: "✓ RSVP'D", color: '#22c55e' },
@@ -245,6 +301,8 @@ export function AdminDashboard() {
   const [editingGuestNameId, setEditingGuestNameId] = useState<string | null>(null)
   const [guestNameDraft, setGuestNameDraft]         = useState({ first_name: '', last_name: '' })
   const [search, setSearch]                         = useState('')
+  const [filter, setFilter]                         = useState<InviteFilter>('all')
+  const [sort, setSort]                             = useState<InviteSort>('name')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -463,7 +521,10 @@ export function AdminDashboard() {
     setSaving(false)
   }
 
-  const filteredInvites = search.trim()
+  // Search first, then the chip filter, then sort. Chip counts come off the
+  // searched list rather than the whole lot, so they always agree with what a
+  // tap would actually show you.
+  const searchedInvites = search.trim()
     ? invites.filter(i => {
         const q = search.trim().toLowerCase()
         return (
@@ -472,6 +533,33 @@ export function AdminDashboard() {
         )
       })
     : invites
+
+  const filterCounts = (() => {
+    const counts: Record<InviteFilter, number> = {
+      all: 0, rsvpd: 0, partial: 0, pending: 0, sat: 0, fri: 0, sun: 0, declined: 0,
+    }
+    for (const invite of searchedInvites) {
+      for (const key of Object.keys(counts) as InviteFilter[]) {
+        if (matchesFilter(invite, key)) counts[key]++
+      }
+    }
+    return counts
+  })()
+
+  const filteredInvites = searchedInvites
+    .filter(i => matchesFilter(i, filter))
+    .sort(SORTS[sort])
+
+  const FILTER_CHIPS: { key: InviteFilter; label: string }[] = [
+    { key: 'all',      label: 'ALL' },
+    { key: 'pending',  label: 'NO REPLY' },
+    { key: 'partial',  label: 'PARTIAL' },
+    { key: 'rsvpd',    label: "RSVP'D" },
+    { key: 'fri',      label: 'FRI' },
+    { key: 'sat',      label: 'SAT' },
+    { key: 'sun',      label: 'SUN' },
+    { key: 'declined', label: "CAN'T COME" },
+  ]
 
   // ── Shared styles ─────────────────────────────────────────────────────────
   // Padding sized for thumbs, not mice — these are tapped on a phone constantly
@@ -516,6 +604,44 @@ export function AdminDashboard() {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
+
+        {/* Filter chips. Each carries its own count so the answer to "how many
+            haven't replied" is readable without tapping anything. Scrolls
+            sideways on a phone rather than wrapping into a wall of buttons. */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+          {FILTER_CHIPS.map(({ key, label }) => {
+            const active = filter === key
+            const count = filterCounts[key]
+            return (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                aria-pressed={active}
+                className="shrink-0 font-[family-name:var(--font-vt323)] text-xs tracking-widest px-2.5 py-1.5 cursor-pointer whitespace-nowrap"
+                style={active
+                  ? { background: 'var(--color-primary)', color: 'var(--color-bg)' }
+                  : { color: count === 0 ? 'var(--color-muted)' : 'var(--color-primary)', boxShadow: RAISED }}
+              >
+                {label} {count}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value as InviteSort)}
+            className="font-[family-name:var(--font-vt323)] text-sm px-2 py-2 tracking-widest text-[var(--color-primary)] bg-[var(--color-surface)] cursor-pointer"
+            style={{ boxShadow: RAISED }}
+            aria-label="Sort invites"
+          >
+            <option value="name">SORT: NAME</option>
+            <option value="status">SORT: CHASE LIST</option>
+            <option value="recent">SORT: NEWEST REPLY</option>
+          </select>
+        </div>
+
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setShowNew(v => !v)}
@@ -585,7 +711,11 @@ export function AdminDashboard() {
       <div className="border border-[var(--color-text)]/10 divide-y divide-[var(--color-text)]/10">
         {filteredInvites.length === 0 && (
           <div className="p-4 font-[family-name:var(--font-vt323)] text-sm text-[var(--color-muted)] tracking-widest">
-            {search.trim() ? `NO RESULTS FOR "${search.toUpperCase()}"` : 'NO INVITES YET. USE “+ NEW INVITE” ABOVE.'}
+            {search.trim()
+              ? `NO RESULTS FOR "${search.toUpperCase()}"`
+              : filter !== 'all'
+                ? `NOBODY UNDER "${FILTER_CHIPS.find(c => c.key === filter)?.label}"`
+                : 'NO INVITES YET. USE “+ NEW INVITE” ABOVE.'}
           </div>
         )}
 
