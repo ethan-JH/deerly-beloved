@@ -345,8 +345,6 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
   // when the number actually changes rather than on every frame.
   const shownScoreRef = useRef(0)
   // Photo + remaining bricks, pre-composited once and blitted each frame.
-  const boardRef   = useRef<HTMLDivElement | null>(null)
-  const meRowRef   = useRef<HTMLDivElement | null>(null)
   const bgRef      = useRef<HTMLCanvasElement | null>(null)
   const bgDirtyRef = useRef(true)
 
@@ -389,16 +387,6 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
     const saved = localStorage.getItem('breakout-hi')
     if (saved) setHiScore(parseInt(saved, 10))
   }, [])
-
-  // Park the player's own row in the middle of the scroller. Setting scrollTop
-  // directly rather than scrollIntoView, which would also scroll the page and
-  // the desktop window behind it.
-  useEffect(() => {
-    const board = boardRef.current
-    const row = meRowRef.current
-    if (!board || !row) return
-    board.scrollTop = Math.max(0, row.offsetTop - board.clientHeight / 2 + row.clientHeight / 2)
-  }, [leaderboard, phase])
 
   // Fetch leaderboard on mount
   useEffect(() => { fetchLeaderboard() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -826,14 +814,19 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
             BE THE FIRST TO PLAY!
           </div>
         ) : (
-          // The whole board scrolls now rather than showing a top five, because
-          // what people actually want is to find themselves on it. Their row is
-          // scrolled to the middle on open, so there's no hunting for it.
-          <div ref={boardRef} className="arcade-scroll max-h-[132px] overflow-y-auto pr-1">
+          // The whole board scrolls rather than showing a top five, so people
+          // can find themselves and see who they're chasing. It opens at the
+          // top: the leader is the headline, and your own row is marked so it's
+          // findable on the way down.
+          //
+          // pointer-events-auto is load bearing. Every overlay that renders this
+          // is pointer-events-none so clicks and drags fall through to the
+          // canvas, which would mean the scroller never saw a wheel or a touch
+          // and simply refused to move.
+          <div className="arcade-scroll pointer-events-auto max-h-[132px] overflow-y-auto overscroll-contain pr-1">
             {leaderboard.top.map((entry, i) => (
               <div
                 key={i}
-                ref={entry.is_me ? meRowRef : undefined}
                 className="flex items-baseline gap-2 font-[family-name:var(--font-vt323)] text-sm tracking-widest leading-relaxed"
                 style={entry.is_me ? { background: 'rgba(224,123,90,0.22)' } : undefined}
               >
