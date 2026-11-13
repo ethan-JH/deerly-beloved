@@ -157,7 +157,9 @@ interface FloatText {
   life: number; maxLife: number
 }
 
-interface LeaderboardEntry { display_name: string; score: number; time_seconds: number | null }
+// is_me is decided server-side from the session cookie rather than by matching
+// display names, which two invites could share.
+interface LeaderboardEntry { display_name: string; score: number; time_seconds: number | null; is_me: boolean }
 interface LeaderboardData {
   top: LeaderboardEntry[]
   myRank: number | null
@@ -343,6 +345,8 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
   // when the number actually changes rather than on every frame.
   const shownScoreRef = useRef(0)
   // Photo + remaining bricks, pre-composited once and blitted each frame.
+  const boardRef   = useRef<HTMLDivElement | null>(null)
+  const meRowRef   = useRef<HTMLDivElement | null>(null)
   const bgRef      = useRef<HTMLCanvasElement | null>(null)
   const bgDirtyRef = useRef(true)
 
@@ -385,6 +389,16 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
     const saved = localStorage.getItem('breakout-hi')
     if (saved) setHiScore(parseInt(saved, 10))
   }, [])
+
+  // Park the player's own row in the middle of the scroller. Setting scrollTop
+  // directly rather than scrollIntoView, which would also scroll the page and
+  // the desktop window behind it.
+  useEffect(() => {
+    const board = boardRef.current
+    const row = meRowRef.current
+    if (!board || !row) return
+    board.scrollTop = Math.max(0, row.offsetTop - board.clientHeight / 2 + row.clientHeight / 2)
+  }, [leaderboard, phase])
 
   // Fetch leaderboard on mount
   useEffect(() => { fetchLeaderboard() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -811,20 +825,31 @@ export function BreakoutGame({ invite }: { invite: InviteData | null }) {
           <div className="font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[#9A8898] text-center">
             BE THE FIRST TO PLAY!
           </div>
-        ) : leaderboard.top.map((entry, i) => {
-          const isMe = invite && entry.display_name === invite.display_name
-          return (
-            <div key={i} className="flex items-baseline gap-2 font-[family-name:var(--font-vt323)] text-sm tracking-widest leading-relaxed">
-              <span className="text-[#9A8898] w-4 shrink-0 text-right">{i + 1}</span>
-              <span className={`flex-1 truncate ${isMe ? 'text-[#E07B5A]' : 'text-[#FAF4C6]'}`}>{entry.display_name}</span>
-              <span className={isMe ? 'text-[#E07B5A]' : 'text-[#FAF4C6]'}>{entry.score}</span>
-              {entry.time_seconds != null && (
-                <span className="text-[#E07B5A] text-xs shrink-0">✦ {fmtTime(entry.time_seconds)}</span>
-              )}
-            </div>
-          )
-        })}
-        {leaderboard.myRank != null && invite && !leaderboard.top.some(e => e.display_name === invite.display_name) && (
+        ) : (
+          // The whole board scrolls now rather than showing a top five, because
+          // what people actually want is to find themselves on it. Their row is
+          // scrolled to the middle on open, so there's no hunting for it.
+          <div ref={boardRef} className="arcade-scroll max-h-[132px] overflow-y-auto pr-1">
+            {leaderboard.top.map((entry, i) => (
+              <div
+                key={i}
+                ref={entry.is_me ? meRowRef : undefined}
+                className="flex items-baseline gap-2 font-[family-name:var(--font-vt323)] text-sm tracking-widest leading-relaxed"
+                style={entry.is_me ? { background: 'rgba(224,123,90,0.22)' } : undefined}
+              >
+                <span className="text-[#9A8898] w-5 shrink-0 text-right">{i + 1}</span>
+                <span className={`flex-1 truncate ${entry.is_me ? 'text-[#E07B5A]' : 'text-[#FAF4C6]'}`}>
+                  {entry.is_me ? '▶ ' : ''}{entry.display_name}
+                </span>
+                <span className={entry.is_me ? 'text-[#E07B5A]' : 'text-[#FAF4C6]'}>{entry.score}</span>
+                {entry.time_seconds != null && (
+                  <span className="text-[#E07B5A] text-xs shrink-0">✦ {fmtTime(entry.time_seconds)}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {leaderboard.myRank != null && (
           <div className="mt-2 pt-1.5 border-t border-[#FAF4C6]/20 font-[family-name:var(--font-vt323)] text-sm tracking-widest text-[#9A8898] text-center">
             YOUR RANK: #{leaderboard.myRank} / {leaderboard.totalPlayers}
           </div>

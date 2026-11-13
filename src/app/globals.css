@@ -153,3 +153,25 @@ body {
 .window-scroll::-webkit-scrollbar-button:vertical:increment {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpolygon points='0,0 7,0 3.5,7' fill='%23FAF4C6'/%3E%3C/svg%3E");
 }
+
+/* Leaderboard scroller inside the Breakout overlays. Same chunky Win95 bones as
+   .window-scroll, recoloured for the dark arcade overlay it sits on rather than
+   the cream window chrome. */
+.arcade-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #FAF4C6 rgba(13,31,60,0.55);
+}
+.arcade-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+.arcade-scroll::-webkit-scrollbar-track {
+  background: rgba(13,31,60,0.55);
+}
+.arcade-scroll::-webkit-scrollbar-thumb {
+  background: #FAF4C6;
+  border: 1px solid rgba(13,31,60,0.55);
+  box-shadow: inset -1px -1px 0 rgba(0,0,0,0.35), inset 1px 1px 0 rgba(255,255,255,0.55);
+}
+.arcade-scroll::-webkit-scrollbar-thumb:active {
+  box-shadow: inset 1px 1px 0 rgba(0,0,0,0.35), inset -1px -1px 0 rgba(255,255,255,0.55);
+}

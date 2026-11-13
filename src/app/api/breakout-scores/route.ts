@@ -29,44 +29,38 @@ async function getRank(inviteId: string, score: number): Promise<{ rank: number;
 export async function GET(request: NextRequest) {
   const db = getSupabaseAdmin()
 
-  const { data: top } = await db
+  const inviteId = request.cookies.get('guest_session')?.value
+
+  // The whole board, not a top five. Guests want to find themselves on it and
+  // see who they're behind, and with roughly 130 invites the full list is small
+  // enough to send in one go. invite_id is selected only to mark the player's
+  // own row and is stripped before the response.
+  const { data: allScores } = await db
     .from('breakout_scores')
-    .select('display_name, score, time_seconds')
+    .select('invite_id, display_name, score, time_seconds')
     .order('score', { ascending: false })
     .order('achieved_at', { ascending: true })
-    .limit(5)
 
-  const { count: totalPlayers } = await db
-    .from('breakout_scores')
-    .select('*', { count: 'exact', head: true })
-
-  const inviteId = request.cookies.get('guest_session')?.value
-  let myRank: number | null = null
-  let myScore: number | null = null
-
-  if (inviteId) {
-    const { data: myRow } = await db
-      .from('breakout_scores')
-      .select('score')
-      .eq('invite_id', inviteId)
-      .single()
-
-    if (myRow) {
-      myScore = (myRow as { score: number }).score
-      const { count: above } = await db
-        .from('breakout_scores')
-        .select('*', { count: 'exact', head: true })
-        .gt('score', myScore)
-      myRank = (above ?? 0) + 1
+  const top = (allScores ?? []).map(row => {
+    const r = row as { invite_id: string; display_name: string; score: number; time_seconds: number | null }
+    return {
+      display_name: r.display_name,
+      score: r.score,
+      time_seconds: r.time_seconds,
+      is_me: !!inviteId && r.invite_id === inviteId,
     }
-  }
-
-  return NextResponse.json({
-    top: top ?? [],
-    myRank,
-    myScore,
-    totalPlayers: totalPlayers ?? 0,
   })
+
+  // Rank and total both come off the list we already have, rather than three
+  // more round trips. Taking the rank from the row's position also guarantees
+  // the "YOUR RANK" line agrees with the number printed beside that row, which
+  // separate counting queries wouldn't on a tie.
+  const meIndex = top.findIndex(e => e.is_me)
+  const myRank = meIndex === -1 ? null : meIndex + 1
+  const myScore = meIndex === -1 ? null : top[meIndex].score
+  const totalPlayers = top.length
+
+  return NextResponse.json({ top, myRank, myScore, totalPlayers })
 }
 
 export async function POST(request: NextRequest) {
